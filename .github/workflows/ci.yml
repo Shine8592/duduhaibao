@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # ── 依赖 ──────────────────────────────────────────────────
       - name: 安装 Typst ${{ env.TYPST_VERSION }}
@@ -36,7 +36,7 @@ jobs:
           sudo apt-get install -y -qq fonts-noto-cjk libzbar0
           fc-list :lang=zh family | sort -u | head -5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -63,7 +63,7 @@ jobs:
       # ── 产物 ──────────────────────────────────────────────────
       - name: 上传渲染产物
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: posters-${{ github.sha }}
           path: |
