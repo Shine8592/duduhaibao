@@ -97,10 +97,14 @@ duduhaibao/
 │   ├── pillow-page-layout.md #    Pillow A4 几何 / 圆角 / 投影 / 比例裁切
 │   ├── cjk-fonts.md          #    中文字体规律、.ttc index 坑、跨平台铁律
 │   ├── style-directions.md   #    卡通 vs 正式两套设计 token
-│   └── raster-text-repair.md #    改已有成品图上的错字（不重排）
+│   ├── calendar-and-date-grids.md  # 日历/日期栅格类（风险模型与海报不同）
+│   ├── reference-and-ip-matching.md # 按参考图/指定 IP 做设计
+│   ├── raster-text-repair.md #    改已有成品图上的错字（不重排）
+│   └── publishing-publicly.md#    把客户定制模板开源出去的去标识化流程
 ├── scripts/
 │   ├── preflight.py          # 预检：渲染前查数据 / 渲染后查成品
-│   └── render_html_to_png.py # HTML → PNG/PDF（零浏览器）
+│   ├── render_html_to_png.py # HTML → PNG/PDF（零浏览器）
+│   └── audit_public_release.sh # 公开前的泄漏扫描（发布者自查用）
 ├── example/                  # 可直接运行的完整示例
 │   ├── lib/data.typ          # ★ 唯一真源：只改这里
 │   ├── lib/tokens.typ        #   设计 token + 断言护栏

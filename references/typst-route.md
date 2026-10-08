@@ -55,7 +55,7 @@ way WeasyPrint does (210 mm @300 ppi = 2480.31), so accept ±1 px.
 #place(top + left, dx: 18mm, dy: 14mm,
   text(fill: white, size: 26pt, weight: "bold")[新一代协作平台发布])
 #place(top + left, dx: 18mm, dy: 30mm,
-  text(fill: rgb("#A8CBEA"), size: 11pt)[云杉科技 × 山海设计 · 秋季产品发布会])
+  text(fill: rgb("#A8CBEA"), size: 11pt)[示例科技 × 山海设计 · 秋季产品发布会])
 
 #place(top + left, dx: 18mm, dy: 62mm,
   text(size: 24pt, weight: "bold", fill: rgb("#1B4F8C"))[让复杂的工作变简单])
@@ -75,7 +75,7 @@ The reason to prefer Typst for recurring work — one template, one data file, N
 ```typst
 #let event = (
   title: "让复杂的工作变简单",
-  speaker: "林知远",
+  speaker: "示例主讲人",
   date: "2026年12月5日 14:00",
   venue: "示例市示例区示例路 88 号",
   seats: 60,

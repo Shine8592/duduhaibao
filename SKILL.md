@@ -78,13 +78,13 @@ exists is the expensive failure in this class — search for a project directory
 `lib/data.*` + `templates/` + `build.sh` (see `example/` in this repo) and extend it
 rather than writing fresh templates. One data file + one command is the whole interface.
 
-**Keep the production pipeline and its public mirror as separate artifacts.** A real poster series
+**Keep the private pipeline and its public mirror as separate artifacts.** A real poster series
 usually carries client material; what gets published is a de-identified copy of the skill and its
-pipeline, not the production one. When syncing changes outward, run the de-identification pass
-first — brand names, person names, addresses and local absolute paths must not reach the public
-copy. Replace real values with explicit placeholders (`示例机构` / `示例主讲人`), never with
-realistic-looking inventions: a plausible fictional name carries the same collision risk as a real
-one, and it is harder to notice — while an obvious placeholder is unambiguous.
+pipeline, not the production one. When syncing changes outward, run the
+de-identification pass first — brand names, person names, addresses and local absolute paths must
+not reach the public copy. Replace real values with explicit placeholders (`示例机构` / `示例主讲人`),
+never with realistic-looking inventions: a plausible fictional name carries the same collision risk
+as the original, while an obvious placeholder is unambiguous.
 
 When the same poster class comes back monthly (a salon series, a term of school notices), do not
 rebuild it — build the **line**. Separate three layers so only the first one changes per issue:
@@ -155,6 +155,16 @@ Guard both, in the layer that owns the constraint:
   screen and fail at the printer. Decode the code back out of the *rendered* file (search the
   whole image, do not hard-code coordinates, so a mispositioned code is caught too) and compare
   against the payload decoded from the source image rather than a hard-coded string.
+
+## Publishing a client-derived template publicly
+
+A pipeline built for one client is the most reusable thing you will have — and the most likely to
+leak. Separate the artifacts, and run the de-identification pass **before** the first push.
+Audit in **both languages**: a sweep for the client's own business terms misses English phrasings
+(the leak that got through was "…carries client material", no brand name but a private path and a
+disclosure). A leak in a pushed commit is **not** fixed by a later commit — the old commit stays
+readable by SHA. See `references/publishing-publicly.md` and
+`scripts/audit_public_release.sh`.
 
 ## Style direction
 
