@@ -75,6 +75,24 @@ for h in $(git log --format=%h); do git grep -lE "$PAT" "$h" -- . ; done
 同一个偷懒：看了计数，没看命中的**原文**。
 每次判定前先把命中行打出来看一眼。
 
+### 5. `raw.githubusercontent.com` 有 CDN 缓存 —— 验证要走 git clone
+
+删库重建后，`curl https://raw.githubusercontent.com/...` 可能**返回旧内容**，
+让我一度以为修复没生效、又白跑一轮删库。
+
+| 验证方式 | 可信度 |
+|---|---|
+| `raw.githubusercontent.com` | ❌ 会缓存，可能返回已删除的旧内容 |
+| `gh api repos/.../commits/<sha>` | ✅ 权威，已删的提交返 422 |
+| `git clone` 后本地扫 | ✅ 权威，适合全历史扫描 |
+
+**判定“线上到底是什么”，用后两种。**
+
+### 6. 扫到东西先看命中的**文件与行**，不要只看命中数
+
+同一份代码里，「客户名写在脚本的默认值里」和「脚本的规则表里列着客户名」
+长得一模一样，但前者是真泄漏，后者是工具必须包含的。
+
 ## 已 push 的泄漏，靠新提交修不掉
 
 **旧提交在 `--force-push` 之后依然可以被 SHA 读到** —— GitHub 会保留
