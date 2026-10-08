@@ -1,0 +1,23 @@
+# ── 渲染产物（跑 build.sh 会重新生成）──
+example/out/
+*.png
+*.pdf
+
+# 例外：源码型 PNG（示例二维码）要提交
+!example/qr-demo.png
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ── 编辑器 / 系统 ──
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# ── Typst 缓存 ──
+.typst-cache/
