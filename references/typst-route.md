@@ -77,7 +77,7 @@ The reason to prefer Typst for recurring work — one template, one data file, N
   title: "让复杂的工作变简单",
   speaker: "林知远",
   date: "2026年12月5日 14:00",
-  venue: "北京市朝阳区示例路 88 号",
+  venue: "示例市示例区示例路 88 号",
   seats: 60,
 )
 

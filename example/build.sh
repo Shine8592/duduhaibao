@@ -16,7 +16,7 @@
 #
 #  环境变量：
 #          PYTHON   指定 python 解释器（默认 python3）
-#                   例：PYTHON=/opt/venv/bin/python ./build.sh
+#                   例：PYTHON=/path/to/venv/bin/python ./build.sh
 #          SKIP_PREFLIGHT=1       跳过预检
 # ═══════════════════════════════════════════════════════════════════
 set -euo pipefail
