@@ -6,6 +6,7 @@
 ![预览](assets/preview-all.jpg)
 
 <p align="center">
+  <a href="https://github.com/Shine8592/duduhaibao/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Shine8592/duduhaibao/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Typst" src="https://img.shields.io/badge/Typst-0.13%2B-239DAD?logo=typst&logoColor=white">
   <img alt="Python" src="https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
@@ -105,7 +106,11 @@ duduhaibao/
 │   ├── lib/tokens.typ        #   设计 token + 断言护栏
 │   ├── templates/            #   三种格式的版式
 │   ├── build.sh              #   一键渲染 + 两道闸
-│   └── tests/                #   回归测试（每个用例对应一个真实故障）
+│   └── tests/                #   回归测试
+│       ├── run_tests.py      #     版式护栏（断言 / 溢出 / 防误报）
+│       ├── check_qr.py       #     二维码可扫性
+│       └── bug_*.typ         #     故障夹具（每个对应一个真实故障）
+├── .github/workflows/ci.yml  # CI：测试 + 渲染 + 上传产物
 └── assets/                   # 预览图
 ```
 
@@ -188,8 +193,12 @@ python3 scripts/preflight.py --root . --output   # 只查成品
 ### ③ 回归测试 —— 一次故障换一个用例，不多不少
 
 ```bash
-python3 tests/run_tests.py      # 当前 4/4 通过
+cd example
+python3 tests/run_tests.py      # 版式护栏：4/4 通过
+python3 tests/check_qr.py       # 二维码可扫性：3 个格式全通过
 ```
+
+**版式护栏**（`run_tests.py`）：
 
 | 用例 | 对应真实故障 |
 |---|---|
@@ -198,8 +207,27 @@ python3 tests/run_tests.py      # 当前 4/4 通过
 | `bug_overflow` | 内容排到页面外被 Typst 静默裁掉 |
 | `ok_all` | 三种格式的正确配置（**防断言误报**）|
 
+**二维码可扫性**（`check_qr.py`）：二维码放错位置、尺寸过小、静默区被吃掉、对比度不足，
+**屏幕上完全看不出问题，打印出来就是扫不出**。测试让解码器**全图搜索**（不硬编码坐标），
+所以它同时能发现"二维码被挪出版面"这类回归；期望值直接从 `data.typ` 指向的源图解码得到，
+数据改了测试自动跟随。
+
 护栏必须**两个方向都测**：历史 bug 要"大声报错"，正确配置要"安静通过"。
 **会误报的护栏活不过一周** —— 一定会被人删掉。
+
+### ④ CI 自动验证
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) 在每次 push / PR 时：
+
+1. 装 Typst + Noto CJK 字体 + Pillow
+2. 跑 `run_tests.py`（版式护栏）
+3. 跑 `build.sh`（完整渲染 + 预检双闸）
+4. 跑 `check_qr.py`（二维码可扫性）
+5. 把 PNG / PDF / 预览图作为 **artifact 上传**，可直接下载查看
+
+**渲染产物不进版本库**（`.gitignore` 里排除了 `example/out/`）——
+产物随时可重建，提交它们只会让 diff 变成噪音。要在 CI 里看到成品，
+下载 artifact 即可。
 
 ---
 
