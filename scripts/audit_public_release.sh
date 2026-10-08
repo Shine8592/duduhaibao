@@ -2,9 +2,9 @@
 # ═══════════════════════════════════════════════════════════════════
 #  公开仓库泄漏扫描 —— 发布前去标识化流程的最后一道闸
 #
-#  为什么需要它：一轮只查中文业务词的扫描漏掉了英文措辞
-#  「the user's real series ... carries client material」，
-#  它既暴露了本机私有路径，又暴露了私有材料的存在。
+#  为什么需要它：一次只查客户业务词的扫描，漏掉了一句纯英文描述 ——
+#  通篇没有品牌名、没有中文，却同时说出了本机私有路径和
+#  「这台机器上存在私有材料」两个事实。（原句不在此引用。）
 #  **规则不够狠 = 等于没扫。**
 #
 #  用法：bash audit_public_release.sh [目录]
@@ -34,6 +34,28 @@ scan() {  # 描述  正则
 
 echo "════════ 公开仓库泄漏扫描 ════════"
 
+# 客户词表必须由调用方传入 —— 绝不写死在脚本里。
+# 这个脚本是要被公开的，任何真实客户名写进来就是一次泄漏。
+: "${AUDIT_CLIENT_TERMS:?请用 AUDIT_CLIENT_TERMS 环境变量传入客户词表（如 客户A|客户B），不要把真实客户名写进脚本}"
+
+# 扫历史提交 —— 只查工作区会漏掉历史里的东西，
+# 而 --force-push 之后旧提交仍能按 SHA 读到。
+if [ -d .git ] && [ "${AUDIT_SKIP_HISTORY:-}" != "1" ]; then
+  echo
+  echo "── ⓪ 历史提交（每个提交都查）──"
+  hist=""
+  for h in $(git log --format=%h 2>/dev/null | head -50); do
+    f=$(git grep -lE "$AUDIT_CLIENT_TERMS" "$h" -- . 2>/dev/null)
+    [ -n "$f" ] && hist="${hist}\n  $h:\n$f"
+  done
+  if [ -n "$hist" ]; then
+    HIT=1
+    printf "  [!] 历史提交含客户词：%b\n" "$hist" | head -12
+  else
+    echo "  OK  历史提交干净"
+  fi
+fi
+
 if [ -n "${AUDIT_CLIENT_TERMS:-}" ]; then
   echo
 echo "── ① 客户业务词（用 AUDIT_CLIENT_TERMS 传，逗号分隔）──"
@@ -47,7 +69,7 @@ scan "其他项目名" "cyber-nyx|Moltbook|duduppt|internal-agent"
 echo
 echo "── ③ 本机路径 / 环境（最易漏）──"
 scan "绝对路径"       "/(root|home|Users|opt|srv)/[a-zA-Z0-9_.-]"
-scan "本机缓存路径"   "\\.cache/|ms-playwright|img-env|\\.hermes"
+scan "本机缓存路径"   "\\.cache/|ms-playwright|\\.hermes|/venv/|/venv\\."
 scan "内网 / 本机服务" "localhost|127\\.0\\.0\\.1|192\\.168\\.|\\.internal"
 
 echo

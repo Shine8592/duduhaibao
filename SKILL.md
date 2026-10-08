@@ -78,9 +78,9 @@ exists is the expensive failure in this class — search for a project directory
 `lib/data.*` + `templates/` + `build.sh` (see `example/` in this repo) and extend it
 rather than writing fresh templates. One data file + one command is the whole interface.
 
-**Keep the private pipeline and its public mirror as separate artifacts.** A real poster series
-usually carries client material; what gets published is a de-identified copy of the skill and its
-pipeline, not the production one. When syncing changes outward, run the
+**Keep the production pipeline and its public mirror as separate artifacts.** A real poster series
+is built for one specific client; what gets published is a de-identified copy of the skill and its
+pipeline, never the production one. When syncing changes outward, run the
 de-identification pass first — brand names, person names, addresses and local absolute paths must
 not reach the public copy. Replace real values with explicit placeholders (`示例机构` / `示例主讲人`),
 never with realistic-looking inventions: a plausible fictional name carries the same collision risk
@@ -161,8 +161,8 @@ Guard both, in the layer that owns the constraint:
 A pipeline built for one client is the most reusable thing you will have — and the most likely to
 leak. Separate the artifacts, and run the de-identification pass **before** the first push.
 Audit in **both languages**: a sweep for the client's own business terms misses English phrasings
-(the leak that got through was "…carries client material", no brand name but a private path and a
-disclosure). A leak in a pushed commit is **not** fixed by a later commit — the old commit stays
+(the leak that got through was a sentence naming an internal path and the existence of private
+material — no brand name, no Chinese term, but a disclosure all the same). A leak in a pushed commit is **not** fixed by a later commit — the old commit stays
 readable by SHA. See `references/publishing-publicly.md` and
 `scripts/audit_public_release.sh`.
 
