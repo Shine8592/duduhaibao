@@ -95,7 +95,7 @@ handful of key festival dates resolve to the expected Gregorian dates. Print a p
 passing render proves nothing about the dates; the re-parse is the check that actually catches a bad
 column offset or a hardcoded 31.
 
-Then run the normal `vision_analyze` pass on the rendered image for layout — but **never** use it to
+Then run the normal `read` pass on the rendered image for layout — but **never** use it to
 confirm a date, a year, or a weekday. See the SKILL.md pitfall on rendered digits.
 
 ## Multi-month delivery

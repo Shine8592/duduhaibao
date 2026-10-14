@@ -1,10 +1,17 @@
 ---
-name: poster-design
-description: "Use when making posters or invitations as print-ready PNG."
-version: 1.3.0
+name: duduhaibao
+description: 海报 / 邀请函 / 活动图 / 日历类视觉稿的印刷级生成（A4 打印、朋友圈 3:4、方形 1:1 封面、易拉宝 80×200cm）。当用户要做海报、邀请函、活动卡片、宣传图、分享图、日历/排期图，或要修改用户发来成品图上的错字时使用。Typst / Pillow / HTML 三路线渲染，纯本地、无浏览器、无 MCP。Do NOT trigger when 交付物是 PPT（用 duduppt）、Excel（用 duduexcel）或纯文字文案。
+license: MIT
+compatibility: 需要 Typst ≥ 0.13、Python 3.9+、Pillow；中文字体（Windows 自带微软雅黑 / Linux 装 fonts-noto-cjk）
+metadata:
+  version: "2.0.0"
 ---
 
-# Poster Design — HTML to print-ready graphics
+# 嘟嘟海报 — 中文优先的印刷级海报生成
+
+> **工具名说明（跨 Agent）**：本文用 `read`（看图 —— 用多模态模型读取 PNG）与 `question`
+> （向用户摆出选项确认）—— 二者是 opencode 原生工具。若在 Hermes 下使用，分别对应
+> `vision_analyze` 与 `clarify`。
 
 Use for a single-page visual deliverable: posters, invitations, event cards, promo/announcement graphics, flyers, share images.
 
@@ -16,12 +23,12 @@ It also covers **date-grid artifacts** — calendars, year/month series, schedul
 
 ## Procedure
 
-1. **Resolve the deliverable before building.** When the user sends an image, or an image plus a block of copy, with no explicit ask, it usually maps to several plausible outputs (poster, invitation PNG, deck, or written copy only). Inspect the image with `vision_analyze`, then use `clarify` with concrete options, recommended first. Building the wrong artifact burns the whole cycle.
-2. **Harvest the source photo for design vocabulary.** Read the subject's own signage, labels, stickers, packaging words, and decorations with `vision_analyze`; that material is free, authentic vocabulary that ties the poster to the real event. Echo one or two motifs in the layout (bunting for a market, plant doodles for a gardening activity, the photo's label wording in the body copy).
+1. **Resolve the deliverable before building.** When the user sends an image, or an image plus a block of copy, with no explicit ask, it usually maps to several plausible outputs (poster, invitation PNG, deck, or written copy only). Inspect the image with `read`, then use `question` with concrete options, recommended first. Building the wrong artifact burns the whole cycle.
+2. **Harvest the source photo for design vocabulary.** Read the subject's own signage, labels, stickers, packaging words, and decorations with `read`; that material is free, authentic vocabulary that ties the poster to the real event. Echo one or two motifs in the layout (bunting for a market, plant doodles for a gardening activity, the photo's label wording in the body copy).
 3. **Choose the page size** per target channel (table below).
 4. **Build one HTML file per size.** Absolutely position every element at an exact CSS page size on a same-sized canvas; embed the photo as a base64 data URI so the HTML stays self-contained. Flow layout drifts and cannot be tuned precisely; absolute coordinates put each block exactly where intended.
 5. **Render.** HTML route: `scripts/render_html_to_png.py` (WeasyPrint + PyMuPDF, no browser — run it with the interpreter that has those packages, e.g. `/path/to/venv/bin/python`, and pass `--expect WxH` so a wrong page size fails loudly rather than shipping). Typst route: `typst compile --format png --ppi 300`. Pillow route: direct `save()`.
-6. **Verify the PNG with `vision_analyze`** (see loop below), fix the HTML, re-render. Do not sign off by re-reading your own HTML or trusting a prior successful run.
+6. **Verify the PNG with `read`** (see loop below), fix the HTML, re-render. Do not sign off by re-reading your own HTML or trusting a prior successful run.
 7. **Report exact output dimensions** and deliver the files.
 
 ## Page sizes
@@ -41,7 +48,7 @@ Pick by **content**, not preference: photos → Pillow, type → Typst, mixed/we
 
 The procedure above is the **HTML route**: absolutely-positioned HTML on a fixed-size CSS page, rendered headless. Use it when the layout is mostly type and rules — headings, cards, info rows, simple inline SVG.
 
-Switch to the **Pillow route** when the artifact is a photo collage: several photographs that each need cropping to a ratio, rounded corners and a drop shadow, plus a heading, body copy and a QR code. Embedding and ratio-cropping half a dozen photos through base64 data URIs is more work than compositing them directly, and no browser is involved at all. Keep the same discipline either way: exact page geometry, a named font handle, and the `vision_analyze` verification loop.
+Switch to the **Pillow route** when the artifact is a photo collage: several photographs that each need cropping to a ratio, rounded corners and a drop shadow, plus a heading, body copy and a QR code. Embedding and ratio-cropping half a dozen photos through base64 data URIs is more work than compositing them directly, and no browser is involved at all. Keep the same discipline either way: exact page geometry, a named font handle, and the `read` verification loop.
 
 Full recipe — A4 geometry, rounded-photo and shadow helpers, ratio-crop, CJK font handle, QR embedding, 300-dpi PDF export — is in `references/pillow-page-layout.md`.
 
@@ -195,7 +202,7 @@ Build both kits from the same primitives so only tokens change: background wash 
 ## Verification loop
 
 1. Render.
-2. `vision_analyze` the PNG with an inspection prompt that asks it to: read back **every** string, report overlap or clipping, report whether icons and emoji rendered (not tofu boxes), and name spacing/balance defects.
+2. `read` the PNG with an inspection prompt that asks it to: read back **every** string, report overlap or clipping, report whether icons and emoji rendered (not tofu boxes), and name spacing/balance defects.
 3. Fix, re-render, re-verify. Two passes is normal; the first pass almost always finds a real spacing or balance issue.
 4. Only then deliver.
 
@@ -264,7 +271,7 @@ series. Full sequence and the scene-sizing formula: `references/reference-and-ip
 - [ ] Page size matches the target channel; both sizes produced when needed.
 - [ ] Photo cropped to the container ratio before embedding.
 - [ ] Fonts appropriate to rasterized vs editable output.
-- [ ] PNG inspected with `vision_analyze`: all text read back, no overlap, no clipping, icons rendered.
+- [ ] PNG inspected with `read`: all text read back, no overlap, no clipping, icons rendered.
 - [ ] Any QR code decoded **out of the final artifact** (not just the source file), with a ≥4-module quiet zone.
 - [ ] Output dimensions and file paths stated in the reply.
 - [ ] For revisions: every asserted error verified at magnification; changed-pixel count reported; untouched regions explicitly named.

@@ -94,7 +94,7 @@ changed = (d > 40).sum()
 
 Report the changed-pixel count, the percentage of the image, and the per-region breakdown, then explicitly state **how many pixels changed outside the intended edit regions**. That number being zero is the evidence that nothing else moved, and it is what a "just fix the typo" request is actually asking to see.
 
-Then run the normal `vision_analyze` pass on the affected crops, asking about the new glyph specifically: whether it is complete, whether the colour and style match its neighbours, and whether the neighbouring glyphs were damaged.
+Then run the normal `read` pass on the affected crops, asking about the new glyph specifically: whether it is complete, whether the colour and style match its neighbours, and whether the neighbouring glyphs were damaged.
 
 ## Pitfalls
 

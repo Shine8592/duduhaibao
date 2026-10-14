@@ -148,7 +148,7 @@ final footprint so swapping in the image is a one-line change.
 
 ## Verify
 
-Same loop as every other route: render, then `vision_analyze` the PNG with a prompt that
+Same loop as every other route: render, then `read` the PNG with a prompt that
 asks for a string-by-string read-back, overlap/clipping, and the register check. Typst
 gets the geometry right; only the pixels tell you whether the *design* is right. Report
 the exact output dimensions in the delivery message.

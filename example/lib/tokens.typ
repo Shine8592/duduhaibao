@@ -2,6 +2,14 @@
 //  设计 token + 共用组件（正式版规格：方角、无阴影、单一品牌色）
 // ═══════════════════════════════════════════════════════════════
 
+// ── 字体栈（跨平台，单一真源）─────────────────────────────────
+// 按优先级排列，Typst 取第一个「本机真实存在」的字体名。
+//   Linux / CI ：Noto Sans CJK SC（apt install fonts-noto-cjk）
+//   Windows    ：Microsoft YaHei（系统自带）
+// 只写一个名字会在别的平台上【静默回退】到默认字体，版式悄悄走样 ——
+// 所以这里给一条栈，并由 preflight.py 用 `typst fonts` 核对本机是否命中。
+#let FONTS = ("Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei")
+
 // ── 颜色 ──────────────────────────────────────────────────────
 #let BRAND  = rgb("#1B4F8C")   // 主品牌色（换机构/换活动只改这一行）
 #let BRAND2 = rgb("#A8CBEA")   // 品牌浅色

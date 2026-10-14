@@ -126,5 +126,5 @@ Margins 160, content width 2160:
 
 - Measure the bottom band and the top band: they must be pure white (or pure background).
 - Confirm outer frame-to-edge distance ≥ ~10 mm.
-- Read every string back off the rendered image with `vision_analyze` — the Pillow route can drop an
+- Read every string back off the rendered image with `read` — the Pillow route can drop an
   entire text layer silently, so "script exited 0" is not evidence anything was drawn.

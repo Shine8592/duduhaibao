@@ -8,6 +8,9 @@
 // 朋友圈配置
 #highlights(("a","b","c"), num_size: px(28), txt_size: px(33))
 #info_row("活动时间", "2026年12月5日（周六）14:00", label_w: px(172), size: px(32))
+// 方形封面版配置
+#highlights(("a","b","c"), num_size: px(24), txt_size: px(30))
+#info_row("活动时间", "2026年12月5日（周六）14:00", label_w: px(160), size: px(29))
 // 易拉宝配置
 #highlights(("a","b","c"), num_size: 56pt, txt_size: 66pt, label_w: 68mm)
 #info_row("活动时间", "2026年12月5日（周六）14:00", label_w: 190mm, size: 64pt)

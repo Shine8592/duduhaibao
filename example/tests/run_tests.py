@@ -14,11 +14,15 @@
 import os
 import subprocess
 import sys
+import tempfile
 
 # ROOT = 示例项目目录（本文件的上一级），Typst 编译以它为根
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # preflight.py 在项目外的 scripts/ 里，复用它的像素检查函数
 sys.path.insert(0, os.path.join(os.path.dirname(ROOT), "scripts"))
+
+# 临时产物目录：跨平台（Windows 没有 /tmp），别写死路径
+TMP = tempfile.gettempdir()
 
 GREEN, RED, DIM, OFF = "\033[32m", "\033[31m", "\033[2m", "\033[0m"
 passed, failed = 0, 0
@@ -30,13 +34,17 @@ def typst(src, out, ppi=None):
     if ppi:
         cmd += ["--format", "png", "--ppi", str(ppi)]
     cmd += [src, out]
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    return r.returncode == 0, (r.stderr or "") + (r.stdout or "")
+    # 不用 text=True：Windows 上会按 GBK 解码 Typst 的 UTF-8 输出而崩溃
+    r = subprocess.run(cmd, capture_output=True)
+    out = (r.stdout or b"").decode("utf-8", errors="replace") \
+        + (r.stderr or b"").decode("utf-8", errors="replace")
+    return r.returncode == 0, out
 
 
 def case(name, desc, expect_ok, src, ppi=None, must_mention=None):
     global passed, failed
-    ok, out = typst(src, "/tmp/rt-out.png" if ppi else "/tmp/rt-out.pdf", ppi)
+    outext = "png" if ppi else "pdf"
+    ok, out = typst(src, os.path.join(TMP, f"rt-out.{outext}"), ppi)
     problems = []
     if ok != expect_ok:
         problems.append(
@@ -61,7 +69,7 @@ def case(name, desc, expect_ok, src, ppi=None, must_mention=None):
 def case_pixel(name, desc, src, safe_bottom_px):
     """渲染后跑与 preflight 相同的底部净空检查"""
     global passed, failed
-    png = "/tmp/rt-ovf.png"
+    png = os.path.join(TMP, "rt-ovf.png")
     ok, out = typst(src, png, ppi=150)
     if not ok:
         failed += 1
@@ -93,7 +101,7 @@ case("标签折行", "px(32) 字号塞进 px(120) 标签列",
      must_mention="info_row")
 
 print(f"\n  {DIM}防误报类：应当编译通过{OFF}")
-case("正确配置不误报", "A4 + 朋友圈 + 易拉宝三种真实配置",
+case("正确配置不误报", "A4 + 朋友圈 + 方形 + 易拉宝四种真实配置",
      expect_ok=True, src=f"{ROOT}/tests/ok_all.typ")
 
 print(f"\n  {DIM}成品后检：越界内容应当被像素检查抓住{OFF}")

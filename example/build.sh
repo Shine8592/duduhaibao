@@ -8,6 +8,7 @@
 #  用法：  ./build.sh              全部渲染
 #          ./build.sh a4           只渲染 A4
 #          ./build.sh social       只渲染朋友圈版
+#          ./build.sh square       只渲染方形封面版
 #          ./build.sh banner       只渲染易拉宝版
 #          ./build.sh all --force  预检报错也强制渲染
 #
@@ -78,6 +79,9 @@ fi
 if [ "$ONLY" = "all" ] || [ "$ONLY" = "social" ]; then
   render poster-social  templates/poster-social.typ  192 "朋友圈版    2160x2880px (3:4)"
 fi
+if [ "$ONLY" = "all" ] || [ "$ONLY" = "square" ]; then
+  render poster-square  templates/poster-square.typ  192 "方形封面版  2160x2160px (1:1)"
+fi
 if [ "$ONLY" = "all" ] || [ "$ONLY" = "banner" ]; then
   render poster-banner  templates/poster-banner.typ  100 "易拉宝版    3150x7874px (80x200cm)"
 fi
@@ -85,28 +89,7 @@ fi
 # ─────────────────────────────────────────────────────────────────
 #  预览图（聊天/网页里看，不用下大图）
 # ─────────────────────────────────────────────────────────────────
-"$PYTHON" - "$ONLY" <<'PY'
-import sys, os
-from PIL import Image
-only = sys.argv[1] if len(sys.argv) > 1 else "all"
-names = [n for n in ("poster-a4", "poster-social", "poster-banner")
-         if only == "all" or only == n.replace("poster-", "")]
-for n in names:
-    p = f"out/{n}.png"
-    if not os.path.exists(p):
-        continue
-    im = Image.open(p)
-    if im.mode in ("RGBA", "LA", "P"):
-        a = im.convert("RGBA"); bg = Image.new("RGB", im.size, (255, 255, 255))
-        bg.paste(a, mask=a.split()[-1]); im = bg
-    else:
-        im = im.convert("RGB")
-    w, h = im.size
-    k = min(1.0, 1400 / max(w, h))          # 预览最长边 1400
-    pv = im.resize((max(1, int(w * k)), max(1, int(h * k))), Image.LANCZOS)
-    pv.save(f"out/{n}_preview.jpg", quality=93)
-    print(f"  ✅ {n}_preview.jpg  {pv.size[0]}x{pv.size[1]}  (原图 {w}x{h})")
-PY
+"$PYTHON" "$HERE/../scripts/make_preview.py" --root "$HERE" --only "$ONLY"
 
 # ─────────────────────────────────────────────────────────────────
 #  闸门 2：渲染后查成品（尺寸 / 空白图 / 底部被裁）

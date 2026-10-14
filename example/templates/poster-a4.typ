@@ -9,7 +9,7 @@
 #import "../lib/tokens.typ": *
 
 #set page(width: 210mm, height: 297mm, margin: 0pt, fill: rgb("#FFFFFF"))
-#set text(font: ("Noto Sans CJK SC",), lang: "zh", size: 10pt, fill: INK)
+#set text(font: FONTS, lang: "zh", size: 10pt, fill: INK)
 #set par(leading: 1.85em, spacing: 1.2em, justify: false)
 
 #let M  = 18mm

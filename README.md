@@ -1,6 +1,6 @@
 # 嘟嘟海报 · duduhaibao
 
-> 一套数据，一键出 **A4 打印版 / 朋友圈版 / 易拉宝版** 三种格式的活动海报。
+> 一套数据，一键出 **A4 打印版 / 朋友圈版 / 方形封面版 / 易拉宝版** 四种格式的活动海报。
 > 附**三层护栏**：静默排版 bug 会在编译期大声报错，而不是悄悄印错。
 
 ![预览](assets/preview-all.jpg)
@@ -20,8 +20,8 @@
 一个**中文优先**的印刷级海报生成工具包。核心不是"又一个海报模板"，而是三件事：
 
 1. **排版引擎直连** —— 用 Typst 编译成 PDF/PNG，不套 MCP、不起服务、不装 Chromium（省 170MB），
-   冷启动渲染三种格式 **约 4 秒**。
-2. **数据与版式分离** —— 出新稿只改一个 `lib/data.typ`，三种格式同步更新。
+   冷启动渲染四种格式 **约 4 秒**。
+2. **数据与版式分离** —— 出新稿只改一个 `lib/data.typ`，四种格式同步更新。
 3. **护栏体系** —— 排版类 bug 最恶心的地方是**静默**：列宽不够会把 `01` 悄悄裁成 `0`，
    内容溢出页面会被无声切掉，而编译器**一声不吭**。这个项目把它们变成大声报错。
 
@@ -35,11 +35,13 @@
 git clone https://github.com/Shine8592/duduhaibao.git
 cd duduhaibao/example
 
-# 依赖：typst + python3/pillow
-#   macOS:  brew install typst && pip install pillow
-#   Linux:  cargo install typst-cli && pip install pillow
+# 依赖：typst + python + pillow
+#   macOS:   brew install typst && pip install pillow
+#   Linux:   cargo install typst-cli && pip install pillow
+#   Windows: winget install Typst.Typst   （或下载 typst.exe 放进 PATH）
 
-./build.sh              # 三种格式一起出（含预检 + 后检）
+./build.sh              # 四种格式一起出（含预检 + 后检）  ← macOS / Linux
+.\build.ps1             # 同上，Windows PowerShell 原生版
 ```
 
 产物在 `example/out/`：
@@ -48,6 +50,7 @@ cd duduhaibao/example
 |---|---|---|
 | `poster-a4.png` / `.pdf` | 2480×3508px（210×297mm @300dpi）| 打印、张贴 |
 | `poster-social.png` / `.pdf` | 2160×2880px（3:4）| 朋友圈、手机屏 |
+| `poster-square.png` / `.pdf` | 2160×2160px（1:1）| 公众号首图、小红书封面 |
 | `poster-banner.png` / `.pdf` | 3150×7874px（80×200cm @100dpi）| 易拉宝、展架 |
 
 **出新稿** —— 只改 `example/lib/data.typ`：
@@ -69,7 +72,7 @@ cd duduhaibao/example
 )
 ```
 
-然后 `./build.sh`。**换品牌色**：改 `lib/tokens.typ` 里的 `BRAND` 一个值，三种格式同步跟随。
+然后 `./build.sh`（Windows：`.\build.ps1`）。**换品牌色**：改 `lib/tokens.typ` 里的 `BRAND` 一个值，四种格式同步跟随。
 
 ---
 
@@ -91,7 +94,7 @@ cd duduhaibao/example
 
 ```
 duduhaibao/
-├── SKILL.md                  # 技能定义（可直接放进 Hermes 的 skills/ 目录）
+├── SKILL.md                  # 技能定义（可放进 opencode / Hermes 的 skills/ 目录）
 ├── references/               # 分路线深度参考
 │   ├── typst-route.md        #    Typst 手册 + 完整踩坑清单
 │   ├── pillow-page-layout.md #    Pillow A4 几何 / 圆角 / 投影 / 比例裁切
@@ -102,14 +105,16 @@ duduhaibao/
 │   ├── raster-text-repair.md #    改已有成品图上的错字（不重排）
 │   └── publishing-publicly.md#    把客户定制模板开源出去的去标识化流程
 ├── scripts/
-│   ├── preflight.py          # 预检：渲染前查数据 / 渲染后查成品
+│   ├── preflight.py          # 预检：渲染前查数据+字体 / 渲染后查成品
+│   ├── make_preview.py       # 生成最长边 1400px 的预览 JPG
 │   ├── render_html_to_png.py # HTML → PNG/PDF（零浏览器）
 │   └── audit_public_release.sh # 公开前的泄漏扫描（发布者自查用）
 ├── example/                  # 可直接运行的完整示例
 │   ├── lib/data.typ          # ★ 唯一真源：只改这里
 │   ├── lib/tokens.typ        #   设计 token + 断言护栏
-│   ├── templates/            #   三种格式的版式
-│   ├── build.sh              #   一键渲染 + 两道闸
+│   ├── templates/            #   四种格式的版式
+│   ├── build.sh              #   一键渲染 + 两道闸（macOS / Linux）
+│   ├── build.ps1             #   同上，Windows PowerShell 原生版
 │   └── tests/                #   回归测试
 │       ├── run_tests.py      #     版式护栏（断言 / 溢出 / 防误报）
 │       ├── check_qr.py       #     二维码可扫性
@@ -180,7 +185,7 @@ error: panicked with: ❌ highlights 空间不够：需要约 57.2pt，只有 25
 
 | 闸门 | 时机 | 查什么 |
 |---|---|---|
-| **闸门 1** | 渲染**前** | `draft` 开关、必填字段为空、`qr_image` 指向的文件是否存在、亮点条数、标题行长 |
+| **闸门 1** | 渲染**前** | `draft` 开关、必填字段为空、`qr_image` 指向的文件是否存在、亮点条数、标题行长、**字体是否可用**（`typst fonts`）|
 | **闸门 2** | 渲染**后** | 尺寸对不对、是不是空白图、**底部净空区是否有内容**（抓静默裁切/溢出）|
 
 ```bash
@@ -194,12 +199,16 @@ python3 scripts/preflight.py --root . --output   # 只查成品
 **"底部净空边带"是最便宜的溢出探测器**：声明一条"必须是空白"的边带，然后断言它真的是白的。
 任何被挤到页面外的元素都会落在那里，一次字节遍历就能抓到 —— 不需要模型、不需要 diff。
 
+**"字体是否可用"是另一类静默失败**：模板只写字体**名**，本机若一个都没有，Typst
+不报错、直接回退到默认字体，版式悄悄走样。闸门 1 用 `typst fonts` 核对字体栈，
+一个都没有就报错、首选缺失就警告 —— 详见下方「中文字体」。
+
 ### ③ 回归测试 —— 一次故障换一个用例，不多不少
 
 ```bash
 cd example
 python3 tests/run_tests.py      # 版式护栏：4/4 通过
-python3 tests/check_qr.py       # 二维码可扫性：3 个格式全通过
+python3 tests/check_qr.py       # 二维码可扫性：4 个格式全通过
 ```
 
 **版式护栏**（`run_tests.py`）：
@@ -209,7 +218,7 @@ python3 tests/check_qr.py       # 二维码可扫性：3 个格式全通过
 | `bug_01_truncated` | 易拉宝序号 `01` 被挤成 `0`（静默，只在成品上可见）|
 | `bug_label_wrap` | 朋友圈「活动时间」折成「活动时 / 间」|
 | `bug_overflow` | 内容排到页面外被 Typst 静默裁掉 |
-| `ok_all` | 三种格式的正确配置（**防断言误报**）|
+| `ok_all` | 四种格式的正确配置（**防断言误报**）|
 
 **二维码可扫性**（`check_qr.py`）：二维码放错位置、尺寸过小、静默区被吃掉、对比度不足，
 **屏幕上完全看不出问题，打印出来就是扫不出**。测试让解码器**全图搜索**（不硬编码坐标），
@@ -246,6 +255,19 @@ Linux 上渲染用 `Noto Sans CJK SC` 没问题，但**交付给别人的成品/
 - **禁用** 文泉驿微米黑（WenQuanYi Micro Hei）等 Linux 字体 —— Windows/Mac 打开会弹
   「字体不可用」并自动替换，**版式直接崩掉**
 - 字体名必须和 `fc-list` 里报的完全一致 —— 写成 `Noto Sans` 会静默回退到拉丁字面，中文全变豆腐块
+
+### 渲染端字体栈 —— 别写死单一字体名
+
+模板不写死字体名，而是引用 `lib/tokens.typ` 的 `FONTS` 字体栈：
+
+```typst
+#let FONTS = ("Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei")
+```
+
+Typst 取第一个本机真实存在的：**Linux / CI** 命中 `Noto Sans CJK SC`，
+**Windows** 命中 `Noto Sans SC` / `Microsoft YaHei`。只写一个名字会在别的平台上
+**静默回退**、版式悄悄走样 —— 所以 `preflight.py` 的闸门 1 会用 `typst fonts`
+核对字体栈，一个都不可用直接报错、首选缺失则警告。
 
 详见 [`references/cjk-fonts.md`](references/cjk-fonts.md)。
 
@@ -303,15 +325,23 @@ check || RC=$? # ✅
 
 ---
 
-## 作为 Hermes 技能使用
+## 作为 Agent 技能使用
 
-`SKILL.md` 就是一个标准的 Hermes 技能定义。装法：
+`SKILL.md` 是一个标准的 Agent 技能定义（frontmatter 带 `name` / `description`）。
+
+**opencode**：
+
+```bash
+cp -r duduhaibao ~/.config/opencode/skills/duduhaibao
+```
+
+**Hermes**：
 
 ```bash
 cp -r duduhaibao ~/.hermes/skills/poster-design
 ```
 
-之后在对话里说"做个海报"，技能会被自动加载，包含三条路线的选路原则、验证闭环和踩坑清单。
+之后在对话里说"做个海报"，技能会被自动加载，包含各路线选路原则、验证闭环和踩坑清单。
 
 > 不提 MCP 的原因：MCP 的价值只在「多客户端复用」和「重型预热」上成立。
 > 海报渲染无状态、Typst 冷启动不到 1 秒、只有一个消费者 ——
@@ -324,10 +354,10 @@ cp -r duduhaibao ~/.hermes/skills/poster-design
 
 | 依赖 | 版本 | 装法 |
 |---|---|---|
-| [Typst](https://typst.app) | ≥ 0.13 | `brew install typst` / `cargo install typst-cli` |
+| [Typst](https://typst.app) | ≥ 0.13 | `brew install typst` / `cargo install typst-cli` / `winget install Typst.Typst` |
 | Python | ≥ 3.9 | 系统自带 |
 | [Pillow](https://python-pillow.org) | 任意 | `pip install pillow` |
-| Noto Sans CJK | 任意 | `apt install fonts-noto-cjk` / `brew install --cask font-noto-sans-cjk-sc` |
+| Noto Sans CJK | 任意 | `apt install fonts-noto-cjk` / `brew install --cask font-noto-sans-cjk-sc`（Windows 用自带微软雅黑，无需安装）|
 
 `scripts/render_html_to_png.py` 另有可选依赖：`weasyprint`、`pymupdf`
 （以及系统库 `libpango-1.0-0`、`libcairo2`）。
@@ -346,8 +376,9 @@ cp -r duduhaibao ~/.hermes/skills/poster-design
 ## English
 
 **duduhaibao** is a Chinese-first, print-ready poster generator. One data file drives
-three physical formats (A4 print, 3:4 social, 80×200cm roll-up banner), rendered by Typst
-with no browser, no server, and no MCP layer — roughly 4 seconds cold for all three.
+four physical formats (A4 print, 3:4 social, 1:1 square cover, 80×200cm roll-up banner),
+rendered by Typst with no browser, no server, and no MCP layer — roughly 4 seconds cold
+for all four. Build with `./build.sh` (macOS/Linux) or `.\build.ps1` (Windows).
 
 Its distinguishing feature is **guarding against silent layout failure**. Typesetting fails
 loudly on syntax errors but silently on clipping — a too-narrow grid column renders `01` as
@@ -357,8 +388,9 @@ turns those into hard errors:
 - **Compile-time assertions** placed in the helper that owns the constraint (the only code
   that knows a column width and a font size are related), with failure messages that name
   the *symptom* and the *fix*.
-- **Two gates**: data validation before rendering (`draft` flag, required fields, referenced
-  files existing) and artifact validation after (dimensions, non-blank, and a declared
+- **Two gates**: validation before rendering (`draft` flag, required fields, referenced files
+  existing, and the font stack actually resolving via `typst fonts` — an unresolved font name
+  falls back *silently*) and artifact validation after (dimensions, non-blank, and a declared
   bottom-safety strip still white — the cheapest reliable clipping detector).
 - **A regression suite** with one fixture per real incident, asserted **both ways**: the
   historical bug must now fail loudly, and valid configurations must still pass. A guard

@@ -7,7 +7,7 @@ user hands over a reference design, or names a character/brand the artifact must
 
 The reference **is** the spec. Do not interpret it — measure it.
 
-1. Split the image into quadrants and crop regions; read each **crop** with `vision_analyze` and ask
+1. Split the image into quadrants and crop regions; read each **crop** with `read` and ask
    for numbers: the panel/side-column width split, band height fractions, cell aspect ratio, the
    header format, where the illustrations sit, what the footer contains.
 2. One pass over the whole image returns a *description*. Only the crops return *proportions* — and

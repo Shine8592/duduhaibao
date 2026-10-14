@@ -17,6 +17,7 @@
 import argparse
 import os
 import re
+import subprocess
 import sys
 
 # 项目根：默认当前工作目录，可用 --root 覆盖。
@@ -30,6 +31,7 @@ DATA = os.path.join(ROOT, "lib", "data.typ")
 FORMATS = {
     "poster-a4":     (2480, 3508, 60,  "A4 打印版"),
     "poster-social": (2160, 2880, 60,  "朋友圈版"),
+    "poster-square": (2160, 2160, 60,  "方形封面版"),
     "poster-banner": (3150, 7874, 240, "易拉宝版"),
 }
 
@@ -150,6 +152,50 @@ def check_data(strict_sample: bool):
             ok(f"标题 {len(lines)} 行，最长 {longest} 字")
 
 
+# ─────────────────────────────────────────────────────────────────
+#  渲染前：字体可用性检查（把「静默回退」变成闸门）
+#
+#  模板只写字体名（取自 tokens.typ 的 FONTS 字体栈）。若本机一个都
+#  没有，Typst 不会报错，而是【静默回退】到默认字体，版式悄悄走样 ——
+#  这正是本项目要消灭的那类静默失败。这里用 `typst fonts` 核对。
+# ─────────────────────────────────────────────────────────────────
+def parse_font_stack(tokens_path: str) -> list:
+    """从 tokens.typ 抠出 FONTS 字体栈里的字体名（按优先级）。"""
+    if not os.path.exists(tokens_path):
+        return []
+    src = open(tokens_path, encoding="utf-8").read()
+    m = re.search(r'FONTS\s*=\s*\((.*?)\)', src, re.S)
+    return re.findall(r'"([^"]+)"', m.group(1)) if m else []
+
+
+def check_fonts():
+    stack = parse_font_stack(os.path.join(ROOT, "lib", "tokens.typ"))
+    if not stack:
+        warn("未在 lib/tokens.typ 找到 FONTS 字体栈，跳过字体可用性检查")
+        return
+    try:
+        # 不用 text=True：Windows 上会按 GBK 解码 Typst 的 UTF-8 输出而崩溃
+        r = subprocess.run(["typst", "fonts"], capture_output=True, timeout=60)
+    except Exception as e:
+        warn(f"无法执行 `typst fonts`（{e.__class__.__name__}），跳过字体检查")
+        return
+    if r.returncode != 0:
+        warn("`typst fonts` 执行失败，跳过字体检查")
+        return
+
+    out = (r.stdout or b"").decode("utf-8", errors="replace")
+    have = {ln.strip() for ln in out.splitlines() if ln.strip()}
+    available = [f for f in stack if f in have]
+    if not available:
+        err("字体栈在本机一个都不可用：" + " / ".join(stack)
+            + " —— 渲染会【静默回退】到默认字体，版式会变！")
+    elif available[0] != stack[0]:
+        warn(f'首选字体 "{stack[0]}" 本机没有，回退到 "{available[0]}"'
+             f'（跨平台正常，但要确认版式未走样）')
+    else:
+        ok(f"首选字体可用：{stack[0]}")
+
+
 def _ink_and_dirty(im, region=None):
     """统计墨迹占比与"脏像素"数。
 
@@ -245,7 +291,8 @@ def main():
 
     if not a.output:
         check_data(strict_sample=a.strict)
-        _print_section("预检（渲染前 · 查数据）")
+        check_fonts()
+        _print_section("预检（渲染前 · 查数据 + 字体）")
         total_errors += errors
         total_warns += warns
         oks.clear(); warns.clear(); errors.clear()
