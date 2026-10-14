@@ -4,7 +4,7 @@ description: 海报 / 邀请函 / 活动图 / 日历类视觉稿的印刷级生�
 license: MIT
 compatibility: 需要 Typst ≥ 0.13、Python 3.9+、Pillow；中文字体（Windows 自带微软雅黑 / Linux 装 fonts-noto-cjk）
 metadata:
-  version: "4.2.0"
+  version: "4.3.0"
 ---
 
 # 海报 — 中文优先的印刷级海报生成
@@ -17,7 +17,7 @@ Use for a single-page visual deliverable: posters, invitations, event cards, pro
 
 Sibling skills: `visual-design-artifacts` covers diagrams, infographics, and browser mockups; `media-creation` covers video/audio pipelines and AI-generated imagery. This skill is for the poster/invitation/event-graphic class.
 
-It also covers **revising an existing poster the user sends back** — typo fixes and small edits to a finished raster graphic. That path does not start from HTML: see `references/raster-text-repair.md`.
+It also covers **revising an existing poster the user sends back** — typo fixes, and block edits such as re-timing a schedule, deleting a line, or changing a date on a finished raster graphic. That path does not start from HTML: see `references/raster-text-repair.md`.
 
 It also covers **date-grid artifacts** — calendars, year/month series, schedules — where the content is computed dates rather than copy and correctness, not style, is what the deliverable is judged on: see `references/calendar-and-date-grids.md`.
 
@@ -289,7 +289,7 @@ crop a region at full resolution and review that crop instead.
 
 ## Revising an existing poster
 
-When the user sends a finished poster (photo, screenshot, or scan) and asks for a wording fix, the deliverable is the *same image* with the minimum number of pixels changed — not a redesign. Full recipe in `references/raster-text-repair.md`; **the runnable tool is `scripts/repair_text.py`** (locate → identify font → erase → paste → diff proof). If the source file exists, edit the source instead — the bitmap path always leaves antialiasing differences. The shape is:
+When the user sends a finished poster (photo, screenshot, or scan) and asks for a wording fix, the deliverable is the *same image* with the minimum number of pixels changed — not a redesign. **The runnable tool is `scripts/repair_text.py`** (locate → identify font → erase → paste → diff proof). If the source file exists, edit the source instead — the bitmap path always leaves antialiasing differences. **Load this skill before writing any pixel script** — an ad-hoc PIL script re-derives every pitfall below one at a time, each costing a round-trip. Full recipe in `references/raster-text-repair.md`; the shape is:
 
 1. Establish the true text before touching anything (verify every suspected error — see pitfalls).
 2. Locate exact glyph bounding boxes programmatically (column segmentation on the ink mask), not by eye.
@@ -299,6 +299,43 @@ When the user sends a finished poster (photo, screenshot, or scan) and asks for 
 6. Prove it: pixel-diff against the original and report how many pixels changed, plus the vision pass on the affected crops.
 
 Deliver PNG (lossless master) and JPG (chat-sized) together; state the changed regions, the changed-pixel count, and explicitly what was left untouched.
+
+**Block edits — re-timing a schedule, deleting a line, changing a date — take the same reference but a different procedure.** Locate the text bands by ink-row projection, snapshot and move whole bands (including their bullet dots), fill with a per-row background profile measured from the card *interior* (a strip merely inside the border still carries the edge highlight, and fills a shade too dark), then restore the decorative columns from the untouched original **and overlay the moved band's own ink back over them** — the restore alone halves whatever glyph crosses the split. **Profile every row before claiming a mark is absent**: these cards draw row separators as 1 px hairlines 7-25 levels deep, and a `range(y0, y1, 5)` scan steps straight over them and reports a smooth gradient. Tell a rule from JPEG ringing by measuring where there is no text. If the rules are real, either redraw them at the new row pitch and the measured weight, or say plainly that the block is now rule-less. Never size a replacement glyph from the target's own bounding box, and never hand-guess the erase window. See the block-level section of `references/raster-text-repair.md`.
+
+**Do not hand-write the block-edit scripts. Drive `scripts/repair_raster.py`.** It implements the procedure above with every pitfall encoded as a guard, so the geometry gets measured instead of re-derived:
+
+```bash
+PY=/path/to/venv/bin/python   # 系统 python3 无 numpy/PIL
+R=../scripts/repair_raster.py
+
+# 1) 先量几何：条带表 + 文字/插画分界列。区域必须收在卡片虚线边框内侧
+$PY $R probe poster.png --region 60,640,510,940
+#    → 条带 y0/y1/中心/节距 + 每条带文字最右 x + X_SPLIT 建议
+#    → 区域若含虚线边框或插画，会直接告警（边框会让整列有墨、条带粘连成一块）
+
+# 2) 量底色剖面并自检采样窗（采到边框高光/插画会告警）
+$PY $R bg poster.png --region 44,648,519,918 --sample-x 120,460
+
+# 2b) 先查这块里到底有没有结构线！发丝线只 1px，步长 5 会完全跳过
+$PY $R rules poster.jpg --region 616,1095,1252,1520 --blank-x 620,830 --text-x 856,1060
+#    → 逐行扫描，输出每条线的深度与「结构线/JPEG 振铃」判定 + 节距
+#    → blank-x 必须给无文字的空白列：结构线沿整卡宽均匀，振铃只跟着文字走
+
+# 3) 清空一块（日期、旧文字）
+$PY $R erase in.png out.png --region 284,1082,600,1136 --sample-x 284,610
+
+# 4) 块级搬移/删除：--src 源条带 → --dst 目标（或 --count 自动在首末中心间均分）
+$PY $R bands in.png out.png --area 44,648,519,918 --sample-x 120,460 \
+        --deco 500,519 --src 726,794,862 --dst 654,756,858 --band-h 56
+
+# 5) 证明改动 + 证明克制
+$PY $R verify orig.jpg final.png --region "活动亮点:44,648,519,918" \
+        --region "活动流程:616,1044,1252,1560" --clean-rows 660,1115,1060,1485
+```
+
+`bands` 自己会打印每条带的墨迹缺口并在偏大时告警；`--deco` 还原与回叠是两遍独立 pass，且只对"文字确实越过分界"的条带回叠（用分界左侧墨迹计数判定，不靠肉眼）。**绘图（新日期、新行文字）仍由本次任务的脚本负责** —— 工具层只管几何、搬移和取证，不知道你要写什么字。
+
+**工具是照流程实现的，不是替代流程。** 它强制的是：单一 `lum()` 助手（消灭 row/block 的 `mean(axis=)` 混淆）、逐行底色剖面（拒绝固定条带与平铺）、只采卡片内部、还原与回叠分离、逐像素判明暗的遮罩、只用最终图干净行做校验。
 
 ## Replicating a supplied design or a named IP
 
