@@ -22,29 +22,28 @@
 #place(top + left, dx: M, dy: px(128),
   text(fill: BRAND2, size: px(30), tracking: 0.25em)[#salon.kicker])
 
-// ── 主标题 + 强调线 + 导语（同一个块内流式排布）──
-// ⚠️ 三者必须放同一个 place 块：强调线要随标题**实际行数**走。之前是三个独立
-//    place、强调线用硬编码 dy；标题一旦 2 行，线就落到第二行字底上（看着像给
-//    首字加下划线）—— 静默版式 bug，尺寸/溢出护栏抓不到。
+// ── 标题 + 强调线 + 导语（同一个块内流式排布）──
+// ⚠️ 只把这三者合块：强调线要随标题**实际行数**走（硬编码 dy 会撞字）。
+// ⚠️ 亮点/信息**不要**塞进这个块：本块设了自定义 par(leading)，嵌套进去会让
+//    子内容的行距被压扁（Typst 的坑，30px 字行距会塌到 ~1.07em）。
 #place(top + left, dx: M, dy: px(238), block(width: CW)[
   #set par(leading: 1.34em, spacing: 0pt)
   #text(size: px(76), weight: "bold", fill: BRAND)[#salon.title]
-  #v(px(16))
+  #v(min_gap(SP.md))
   #block(width: px(108), height: px(6), fill: BRAND)
-  #v(px(12))
+  #v(min_gap(SP.lg))
   #set par(leading: 1.75em)
   #text(size: px(33), fill: MUTED)[#salon.lead_short]
 ])
 
-// ── 亮点 ──
-#place(top + left, dx: M, dy: px(606), block(width: CW)[
+// ── 亮点（独立块：行距用页面级设定，不被压扁）──
+#place(top + left, dx: M, dy: px(664), block(width: CW)[
   #highlights(salon.highlights, gap: px(10), num_size: px(28), txt_size: px(33))
 ])
 
 // ── 信息（只留时间地点，手机屏信息要少）──
 // 用 info_row 而非手写 grid：这样列宽不够会编译期报错
-// （上次手写 grid 用了 px(120)，"活动时间" 被折成 "活动时 / 间"）
-#place(top + left, dx: M, dy: px(866), block(width: CW)[
+#place(top + left, dx: M, dy: px(886), block(width: CW)[
   #set text(size: px(32))
   #info_row("活动时间", salon.date,   label_w: px(172), size: px(32), gap: px(14))
   #info_row("活动地点", salon.venue,  label_w: px(172), size: px(32), gap: px(14))

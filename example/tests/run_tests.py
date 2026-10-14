@@ -101,7 +101,7 @@ case("标签折行", "px(32) 字号塞进 px(120) 标签列",
      must_mention="info_row")
 
 print(f"\n  {DIM}防误报类：应当编译通过{OFF}")
-case("正确配置不误报", "A4 + 朋友圈 + 方形 + 横版 + 易拉宝五种真实配置",
+case("正确配置不误报", "A4 + 朋友圈 + 方形 + 竖屏 + 横版 + 易拉宝六种真实配置",
      expect_ok=True, src=f"{ROOT}/tests/ok_all.typ")
 
 print(f"\n  {DIM}成品后检：越界内容应当被像素检查抓住{OFF}")

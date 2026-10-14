@@ -97,6 +97,7 @@ function Render($name, $template, $ppi, $desc) {
 if ($Only -eq "all" -or $Only -eq "a4") { Render "poster-a4" "templates/poster-a4.typ" 300 "A4 打印版   2480x3508px (210x297mm)" }
 if ($Only -eq "all" -or $Only -eq "social") { Render "poster-social" "templates/poster-social.typ" 192 "朋友圈版    2160x2880px (3:4)" }
 if ($Only -eq "all" -or $Only -eq "square") { Render "poster-square" "templates/poster-square.typ" 192 "方形封面版  2160x2160px (1:1)" }
+if ($Only -eq "all" -or $Only -eq "story") { Render "poster-story" "templates/poster-story.typ" 96 "竖屏 Story  1080x1920px (9:16)" }
 if ($Only -eq "all" -or $Only -eq "wide") { Render "poster-wide" "templates/poster-wide.typ" 96 "横版头图    1920x1080px (16:9)" }
 if ($Only -eq "all" -or $Only -eq "banner") { Render "poster-banner" "templates/poster-banner.typ" 100 "易拉宝版    3150x7874px (80x200cm)" }
 

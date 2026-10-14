@@ -1,6 +1,6 @@
 # 海报 · duduhaibao
 
-> 一套数据，一键出 **A4 打印版 / 朋友圈版 / 方形封面版 / 横版头图 / 易拉宝版** 五种格式的活动海报。
+> 一套数据，一键出 **A4 打印版 / 朋友圈版 / 方形封面版 / 竖屏 Story / 横版头图 / 易拉宝版** 六种格式的活动海报。
 > 附**三层护栏**：静默排版 bug 会在编译期大声报错，而不是悄悄印错。
 
 ![预览](assets/preview-all.jpg)
@@ -20,8 +20,8 @@
 一个**中文优先**的印刷级海报生成工具包。核心不是"又一个海报模板"，而是三件事：
 
 1. **排版引擎直连** —— 用 Typst 编译成 PDF/PNG，不套 MCP、不起服务、不装 Chromium（省 170MB），
-   冷启动渲染五种格式 **约 4 秒**。
-2. **数据与版式分离** —— 出新稿只改一个 `lib/data.typ`，五种格式同步更新。
+   冷启动渲染六种格式 **约 4 秒**。
+2. **数据与版式分离** —— 出新稿只改一个 `lib/data.typ`，六种格式同步更新。
 3. **护栏体系** —— 排版类 bug 最恶心的地方是**静默**：列宽不够会把 `01` 悄悄裁成 `0`，
    内容溢出页面会被无声切掉，而编译器**一声不吭**。这个项目把它们变成大声报错。
 
@@ -44,7 +44,7 @@ python scripts/doctor.py          # 先自检依赖（装了什么、缺什么�
 ./build.sh              # 五种格式一起出（含预检 + 后检）  ← macOS / Linux
 .\build.ps1             # 同上，Windows PowerShell 原生版
 ./build.sh --style vivid-orange   # 换配色（6 套内置，见「风格预设」）
-./build.sh --styles               # 同一版式横向对比全部配色
+./build.sh --styles               # 同一版式横向对比全部配色，并拼成带标注的联系表
 ```
 
 产物在 `example/out/`：
@@ -54,6 +54,7 @@ python scripts/doctor.py          # 先自检依赖（装了什么、缺什么�
 | `poster-a4.png` / `.pdf` | 2480×3508px（210×297mm @300dpi）| 打印、张贴 |
 | `poster-social.png` / `.pdf` | 2160×2880px（3:4）| 朋友圈、手机屏 |
 | `poster-square.png` / `.pdf` | 2160×2160px（1:1）| 公众号首图、小红书封面 |
+| `poster-story.png` / `.pdf` | 1080×1920px（9:16）| 抖音、视频号、快手、IG Story |
 | `poster-wide.png` / `.pdf` | 1920×1080px（16:9）| 文章头图、视频封面 |
 | `poster-banner.png` / `.pdf` | 3150×7874px（80×200cm @100dpi）| 易拉宝、展架 |
 
@@ -96,7 +97,7 @@ python scripts/doctor.py          # 先自检依赖（装了什么、缺什么�
 
 ## 风格预设 —— 换一个名字，全篇换色
 
-配色不散落在模板里，而是集中在 `lib/styles.typ`，每个方案都做过对比度校准：
+配色不散落在模板里，而是集中在 `lib/styles.typ`（**18 套**，全部经 WCAG 对比度闸门校准）：
 
 | 名称 | 调性 | 适合 |
 |---|---|---|
@@ -106,10 +107,22 @@ python scripts/doctor.py          # 先自检依赖（装了什么、缺什么�
 | `vivid-orange` | 活力橙 | 社群 / 亲子 / 市集 / 招生 |
 | `crimson` | 中国红 | 节庆 / 年会 / 典礼 / 内购 |
 | `mono-slate` | 极简墨 | 极简 / 数据报告 / 内部分享 |
+| `navy-gold` | 藏青金 | 峰会 / 颁奖 / 高端活动 |
+| `teal` | 青碧 | 健康 / 环保 / 生活方式 |
+| `sakura` | 樱粉 | 女性向 / 亲子 / 节日赠礼 |
+| `lavender` | 薰衣草 | 文艺 / 疗愈 / 心理成长 |
+| `mist-blue` | 雾霾蓝 | 简约 / 设计 / 摄影展 |
+| `warm-sand` | 暖沙 | 手作 / 咖啡 / 市集 |
+| `tech-cyan` | 科技青 | 科技 / 产品发布 / 数据 |
+| `deep-space` | 深空 | 科技 / 游戏 / 未来主题 |
+| `festival-gold` | 鎏金 | 年会 / 庆典 / 答谢 |
+| `graphite` | 石墨 | 工业 / 极简 / 建筑 |
+| `plum` | 梅子 | 东方 / 文化 / 艺术展 |
+| `forest` | 森林 | 自然 / 户外 / 可持续 |
 
 ```bash
 ./build.sh --style vivid-orange      # 换配色，模板一行不改
-./build.sh --styles                  # 同一版式 × 6 套配色并排渲染，挑一套
+./build.sh --styles                  # 出一张带标注的「联系表」，一次看完 18 套
 python scripts/preflight.py --root . --list-styles   # 列出全部
 ```
 
@@ -168,7 +181,7 @@ duduhaibao/
 │   ├── lib/data.typ          # ★ 唯一真源：只改这里
 │   ├── lib/styles.typ        #   命名配色方案库（--input style=…）
 │   ├── lib/tokens.typ        #   设计 token + 断言护栏
-│   ├── templates/            #   五种格式的版式
+│   ├── templates/            #   六种格式的版式
 │   ├── build.sh              #   一键渲染 + 两道闸（macOS / Linux）
 │   ├── build.ps1             #   同上，Windows PowerShell 原生版
 │   └── tests/                #   回归测试

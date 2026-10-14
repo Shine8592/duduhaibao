@@ -30,7 +30,7 @@ def main():
         print("  （没装 Pillow，跳过预览图生成）")
         return 0
 
-    names = ["poster-a4", "poster-social", "poster-square", "poster-wide", "poster-banner"]
+    names = ["poster-a4", "poster-social", "poster-square", "poster-story", "poster-wide", "poster-banner"]
     if a.only != "all":
         names = [n for n in names if n in (a.only, "poster-" + a.only)]
 

@@ -110,6 +110,9 @@ fi
 if [ "$ONLY" = "all" ] || [ "$ONLY" = "square" ]; then
   render poster-square  templates/poster-square.typ  192 "方形封面版  2160x2160px (1:1)"
 fi
+if [ "$ONLY" = "all" ] || [ "$ONLY" = "story" ]; then
+  render poster-story   templates/poster-story.typ   96  "竖屏 Story  1080x1920px (9:16)"
+fi
 if [ "$ONLY" = "all" ] || [ "$ONLY" = "wide" ]; then
   render poster-wide    templates/poster-wide.typ    96  "横版头图    1920x1080px (16:9)"
 fi

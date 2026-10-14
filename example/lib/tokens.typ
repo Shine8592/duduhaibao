@@ -44,6 +44,23 @@
 // 这样设计稿上的 px 数字可以原样搬过来：px(1080) 就是 1080 CSS px
 #let px(v) = v * 0.75pt
 
+// ── 间距阶梯（4px 基线，大间距取 8 的倍数）──────────────────────
+// 统一纵向节奏：相邻元素的间距统统从这套阶梯里取，不写拍脑袋的数字。
+// 借鉴 huashu-design / html-anything 的「基线网格」纪律 —— 但改成可执行的。
+#let SP = (xs: px(8), sm: px(16), md: px(24), lg: px(32), xl: px(48), xxl: px(64))
+
+// ── 最小间距断言 ──────────────────────────────────────────────
+// 用法：#v(min_gap(SP.md))
+// 太小会 panic —— 把「两个元素贴在一起」这类静默版式 bug 变成编译期报错。
+#let min_gap(v, min: px(16)) = {
+  if v < min {
+    panic("❌ 间距过小：" + repr(v) + " < " + repr(min)
+      + "\n   症状：相邻元素会贴在一起，看着像连成了一个元素"
+      + "\n   修法：从 SP 阶梯里取更大的值（xs/sm/md/lg/xl/xxl）")
+  }
+  v
+}
+
 // ── 字号 ──────────────────────────────────────────────────────
 // 不设全局 scale：Typst 的闭包捕获定义处作用域，模块级变量改了也不会影响
 // 已导入的函数。各格式直接写字号更清楚，也避免这类隐性 bug。
@@ -87,7 +104,9 @@
       text(fill: BRAND, size: num_size, weight: "bold")[#num2(i + 1)],
       text(size: txt_size)[#h],
     )
-    v(gap)
+    // ⚠️ weak: false —— Typst 的 v() 默认是「弱间距」，放进大 block 里会被吞掉，
+    //    表现是列表项之间的间距凭空消失。必须显式关掉 weak。
+    v(gap, weak: false)
   }
 }
 
@@ -105,7 +124,7 @@
     text(fill: MUTED, size: size)[#k],
     text(fill: INK, weight: "medium", size: size)[#val],
   )
-  v(gap)
+  v(gap, weak: false)   // 同 highlights：弱间距在大 block 里会被吞
 }
 
 // ── 品牌带 ────────────────────────────────────────────────────

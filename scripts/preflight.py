@@ -32,6 +32,7 @@ FORMATS = {
     "poster-a4":     (2480, 3508, 60,  "A4 打印版"),
     "poster-social": (2160, 2880, 60,  "朋友圈版"),
     "poster-square": (2160, 2160, 60,  "方形封面版"),
+    "poster-story":  (1080, 1920, 288, "竖屏 Story"),
     "poster-wide":   (1920, 1080, 30,  "横版头图"),
     "poster-banner": (3150, 7874, 240, "易拉宝版"),
 }

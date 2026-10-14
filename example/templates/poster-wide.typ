@@ -28,9 +28,9 @@
 #place(top + left, dx: M, dy: px(210), block(width: LW)[
   #set par(leading: 1.3em, spacing: 0pt)
   #text(size: px(66), weight: "bold", fill: BRAND)[#salon.title]
-  #v(px(18))
+  #v(min_gap(SP.md))
   #block(width: px(96), height: px(6), fill: BRAND)
-  #v(px(24))
+  #v(min_gap(SP.md))
   #set par(leading: 1.7em)
   #text(size: px(30), fill: MUTED)[#salon.lead_short]
 ])
