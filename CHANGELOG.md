@@ -2,6 +2,29 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.2.0] — 2026-10-14
+
+> 主题：第二轮竞品调研后的升级。分析与借鉴记录见
+> [`competitive-analysis.md`](competitive-analysis.md) 的「第二轮补扫」。
+
+### 新增
+- **对比度闸门**：`preflight.py` 逐套配色算 WCAG 对比度（正文/小字 ≥ 4.5、大字 ≥ 3.0），
+  不达标即报错。借鉴 huashu-design / html-anything 的「对比度 ≥ 4.5」硬约束，但把它从
+  **提示词纪律**变成**可执行检查**。**当场查出并修好**两套配色的 muted 偏淡：
+  `formal-blue` 4.26 → 4.65、`vivid-orange` 4.45 → 4.66（前者是默认配色，即所有成品的小字）。
+- **`references/platform-specs.md`**：各平台画幅/像素尺寸 + **UI 遮挡安全区**
+  （抖音/视频号底部 ~15%、小红书底部 ~12%、易拉宝底部 ~30cm、印刷出血/安全线）。
+  借鉴 web-asset-generator 的平台规格表与 gbro-cover-design 的安全区定义。
+- **`scripts/doctor.py`**：环境自检（Python / Typst / Pillow / 中文字体 / 二维码后端 / HTML 路线），
+  **只报告、不静默安装**。借鉴 yingzao / web-asset-generator 的依赖检查纪律。
+
+### 变更
+- `SKILL.md` 新增「**程序做测量，模型做语义**」原则小节：代码负责测量与几何（尺寸 / 字形覆盖 /
+  对比度 / 碰撞），模型负责语义（读图 / 定方向 / 判平衡）；并明确「**只读图一次、不自动重生成，
+  把决定交回用户**」（借鉴 yingzao）。
+- README：补 opencode / Claude Code / Codex / Hermes 四种安装路径；项目结构与闸门表同步。
+- `references/qa-rubric.md`：新增对比度、doctor、平台安全区条目。
+
 ## [2.1.1] — 2026-10-14
 
 ### 修复

@@ -40,6 +40,7 @@ cd duduhaibao/example
 #   Linux:   cargo install typst-cli && pip install pillow
 #   Windows: winget install Typst.Typst   （或下载 typst.exe 放进 PATH）
 
+python scripts/doctor.py          # 先自检依赖（装了什么、缺什么；只报告不安装）
 ./build.sh              # 五种格式一起出（含预检 + 后检）  ← macOS / Linux
 .\build.ps1             # 同上，Windows PowerShell 原生版
 ./build.sh --style vivid-orange   # 换配色（6 套内置，见「风格预设」）
@@ -154,9 +155,11 @@ duduhaibao/
 │   ├── reference-and-ip-matching.md # 按参考图/指定 IP 做设计
 │   ├── raster-text-repair.md #    改已有成品图上的错字（不重排）
 │   ├── publishing-publicly.md#    把客户定制模板开源出去的去标识化流程
-│   └── qa-rubric.md          #    交付质检清单（机器可验 + 人眼判断）
+│   ├── qa-rubric.md          #    交付质检清单（机器可验 + 人眼判断）
+│   └── platform-specs.md     #    各平台画幅/像素/UI 遮挡安全区
 ├── scripts/
-│   ├── preflight.py          # 预检：渲染前查数据+字体 / 渲染后查成品
+│   ├── preflight.py          # 预检：数据+字体+风格+对比度 / 成品
+│   ├── doctor.py             # 环境自检（只报告不安装）
 │   ├── make_preview.py       # 生成最长边 1400px 的预览 JPG
 │   ├── render_styles.py      # 同一版式 × 多套配色，横向对比
 │   ├── render_html_to_png.py # HTML → PNG/PDF（零浏览器）
@@ -238,7 +241,7 @@ error: panicked with: ❌ highlights 空间不够：需要约 57.2pt，只有 25
 
 | 闸门 | 时机 | 查什么 |
 |---|---|---|
-| **闸门 1** | 渲染**前** | `draft` 开关、必填字段为空、`qr_image` 指向的文件是否存在、亮点条数、标题行长、**字体是否可用**（`typst fonts`）|
+| **闸门 1** | 渲染**前** | `draft` 开关、必填字段为空、`qr_image` 指向的文件是否存在、亮点条数、标题行长、**字体是否可用**（`typst fonts`）、**配色对比度是否达标**（WCAG）|
 | **闸门 2** | 渲染**后** | 尺寸对不对、是不是空白图、**底部净空区是否有内容**（抓静默裁切/溢出）|
 
 ```bash
@@ -382,19 +385,22 @@ check || RC=$? # ✅
 
 `SKILL.md` 是一个标准的 Agent 技能定义（frontmatter 带 `name` / `description`）。
 
-**opencode**：
-
 ```bash
+# opencode
 cp -r duduhaibao ~/.config/opencode/skills/duduhaibao
-```
 
-**Hermes**：
+# Claude Code
+cp -r duduhaibao ~/.claude/skills/duduhaibao
 
-```bash
+# Codex
+cp -r duduhaibao ~/.codex/skills/duduhaibao
+
+# Hermes
 cp -r duduhaibao ~/.hermes/skills/poster-design
 ```
 
-之后在对话里说"做个海报"，技能会被自动加载，包含各路线选路原则、验证闭环和踩坑清单。
+装完先跑 `python scripts/doctor.py` 确认依赖齐全。之后在对话里说"做个海报"，
+技能会被自动加载，包含各路线选路原则、验证闭环和踩坑清单。
 
 > 不提 MCP 的原因：MCP 的价值只在「多客户端复用」和「重型预热」上成立。
 > 海报渲染无状态、Typst 冷启动不到 1 秒、只有一个消费者 ——

@@ -95,3 +95,49 @@ victor-design 讲「三道交付闸」，但那是**提示词级的自我约束*
 - **33 个艺术家风格库**：那是提示词语境下的产物；确定性排版里堆风格 = 维护爆炸，
   用**校准过对比度的配色方案**替代更诚实。
 - **上 MCP 服务**：渲染无状态、亚秒级、只有一个消费者，理由见 `SKILL.md` 架构决策。
+
+---
+
+# 第二轮补扫（2026-10-14）
+
+第一轮聚焦「海报 / Typst / 设计 Skill」。第二轮把检索面放宽到**封面 / 小红书 / 社媒图 /
+邀请函 / carousel / 设计 Agent**，捞到几个第一轮漏掉的重要项目。
+
+## 新发现的同类项目
+
+| 项目 | ★ | 类型 | 关键做法 |
+|---|---|---|---|
+| [nexu-io/html-anything](https://github.com/nexu-io/html-anything) | 9103 | HTML 编辑器 + 75 Skill 模板 | 9 个编码 Agent CLI 自动探测；`SKILL.md` 内硬编码**防 AI 味约束** |
+| [pyang5166/gbro-cover-design](https://github.com/pyang5166/gbro-cover-design) | 896 | Agent Skill（封面）| **三轮提问** + 10 种构图风格按需加载 + few-shot 示例库 + 安全区 |
+| [alonw0/web-asset-generator](https://github.com/alonw0/web-asset-generator) | 518 | Claude Code Skill | **平台规格表** + 校验器（尺寸/格式/**WCAG 对比度**）+ 依赖检查（不静默装包）|
+| [op7418/guizang-yingzao-skill](https://github.com/op7418/guizang-yingzao-skill) | 500 | Agent Skill（编辑海报）| **生成前门控**（字体 cmap / 碰撞 / 禁穿区 / 共同轴）；**只读图一次、不自动重生成** |
+| [panggungunvibe/atutun-xhs-cover](https://github.com/panggungunvibe/atutun-xhs-cover) | 418 | Agent Skill（小红书封面）| 垂直场景专用 |
+| [hongfamonvAI/oh-my-cover-design](https://github.com/hongfamonvAI/oh-my-cover-design) | 264 | Agent Skill（封面）| gbro 的上游 |
+| [Vivixiao980/xhs-cover-skill](https://github.com/Vivixiao980/xhs-cover-skill) | 205 | Agent Skill（小红书封面）| 同上 |
+
+## 第二轮的关键洞察
+
+1. **「防 AI 味」已成显学**：html-anything 把 `huashu-design` 的纪律**硬编码进每个 SKILL.md**
+   —— CJK 优先字体栈、8px 基线网格、圆角/软阴影/禁纯黑白、**对比度 ≥ 4.5**、必须用真实数据。
+   从「风格建议」升级成「硬约束」。
+2. **护栏不只我们在做**：`yingzao` 的「生成前门控」检查字体 cmap 覆盖、碰撞、禁穿区、共同轴 ——
+   和我们的断言闸门是**同一哲学的两个实现**（它面向图像模型，我们面向确定性渲染）。
+3. **平台规格 / 安全区正在被沉淀成表格**（web-asset-generator、gbro）：画幅、像素、遮挡区。
+4. **安装体验在卷**：`npx skills add <url>`、插件市场 manifest。
+5. **一次读图、不自动重生成**（yingzao）—— 反"无限重试烧额度"的纪律。
+
+## 第二轮借鉴落实（v2.2.0）
+
+| 借鉴点 | 来源 | 落实 |
+|---|---|---|
+| 对比度 ≥ 4.5 | huashu-design / html-anything | `preflight.py` **新增对比度闸门**（逐套配色算 WCAG，不达标报错）—— 当场查出并修好 `formal-blue`/`vivid-orange` 偏淡的 muted |
+| 平台规格 + 安全区 | web-asset-generator / gbro | 新增 `references/platform-specs.md`（尺寸表 + UI 遮挡区 + 出血/安全线）|
+| 依赖自检、不静默装包 | yingzao / web-asset-generator | 新增 `scripts/doctor.py`（只报告不安装）|
+| 程序测量 / 模型语义 | yingzao | `SKILL.md` 新增同名原则小节 |
+| 只读图一次、决定交回用户 | yingzao | 同上小节 + `qa-rubric.md` |
+| 多 Agent 安装路径 | yingzao / web-asset-generator | README 补 opencode / Claude Code / Codex / Hermes 安装法 |
+
+## 我们依旧的双重优势（第二轮复核后不变）
+
+1. **确定性渲染 → 文字永不错**（本赛道仍在和乱码搏斗）。
+2. **可执行护栏**（断言 / 像素 / 底部净空 / 对比度 / 字体 / 风格 / 回归）—— 竞品的护栏多是提示词级或图像模型级。

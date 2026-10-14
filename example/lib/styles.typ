@@ -22,7 +22,7 @@
   "formal-blue": (
     label: "商务蓝", use: "企业发布会 / 公开课 / 正式活动",
     brand: rgb("#1B4F8C"), brand2: rgb("#A8CBEA"), tint: rgb("#F4F8FC"),
-    ink: rgb("#2B2B2B"), muted: rgb("#6E7C8C"), rule: rgb("#DCE3EA"),
+    ink: rgb("#2B2B2B"), muted: rgb("#687685"), rule: rgb("#DCE3EA"),
   ),
   // ── 墨绿（学术 / 文化 / 自然）─────────────────────────────────
   "ink-green": (
@@ -40,7 +40,7 @@
   "vivid-orange": (
     label: "活力橙", use: "社群 / 亲子 / 市集 / 招生活动",
     brand: rgb("#C2410C"), brand2: rgb("#FBD3B4"), tint: rgb("#FFF6EF"),
-    ink: rgb("#2C2420"), muted: rgb("#8A7364"), rule: rgb("#F0DFD2"),
+    ink: rgb("#2C2420"), muted: rgb("#867061"), rule: rgb("#F0DFD2"),
   ),
   // ── 中国红（节庆 / 年会 / 开业内购）───────────────────────────
   "crimson": (

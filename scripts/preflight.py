@@ -234,6 +234,71 @@ def check_style(requested):
         err(f'未知风格 "{requested}"，可选：' + "、".join(styles))
 
 
+# ─────────────────────────────────────────────────────────────────
+#  渲染前：对比度闸门
+#
+#  借鉴 huashu-design / html-anything 的「对比度 ≥ 4.5」硬约束 —— 但把它从
+#  「写进提示词的纪律」变成**可执行检查**：逐套配色算 WCAG 对比度，不达标即报。
+# ─────────────────────────────────────────────────────────────────
+def parse_palette_colors() -> dict:
+    p = os.path.join(ROOT, "lib", "styles.typ")
+    if not os.path.exists(p):
+        return {}
+    src = open(p, encoding="utf-8").read()
+    out = {}
+    for m in re.finditer(r'"([a-z0-9\-]+)"\s*:\s*\(([\s\S]*?)\n\s*\),', src):
+        key, body = m.group(1), m.group(2)
+        cols = dict(re.findall(r'(\w+)\s*:\s*rgb\("#([0-9A-Fa-f]{6})"\)', body))
+        if cols:
+            out[key] = cols
+    return out
+
+
+def _rel_lum(hexstr: str) -> float:
+    r, g, b = (int(hexstr[i:i + 2], 16) / 255 for i in (0, 2, 4))
+
+    def f(c):
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+
+
+def _contrast(a: str, b: str) -> float:
+    la, lb = _rel_lum(a), _rel_lum(b)
+    hi, lo = max(la, lb), min(la, lb)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+# (前景, 背景, 目标比, 级别, 说明)；"ffffff" 表示纯白
+CONTRAST_RULES = [
+    ("ink",     "ffffff", 4.5, "err",  "正文 ink 于白底"),
+    ("muted",   "ffffff", 4.5, "err",  "次要文字 muted 于白底（小字）"),
+    ("brand",   "ffffff", 3.0, "warn", "主色 brand 于白底（标题，大字）"),
+    ("ffffff",  "brand",  4.5, "err",  "白字于品牌带"),
+    ("brand2",  "brand",  3.0, "warn", "点缀色 brand2 于品牌带"),
+]
+
+
+def check_contrast():
+    palettes = parse_palette_colors()
+    if not palettes:
+        warn("未找到 lib/styles.typ 配色，跳过对比度检查")
+        return
+    bad = 0
+    for key, cols in palettes.items():
+        for fg, bg, target, level, desc in CONTRAST_RULES:
+            cf = "ffffff" if fg == "ffffff" else cols.get(fg)
+            cb = "ffffff" if bg == "ffffff" else cols.get(bg)
+            if not cf or not cb:
+                continue
+            r = _contrast(cf, cb)
+            if r < target:
+                bad += 1
+                msg = f'{key}：{desc} = {r:.2f}:1 < {target}:1'
+                (err if level == "err" else warn)(msg)
+    if bad == 0:
+        ok(f"对比度全部达标（{len(palettes)} 套配色 × {len(CONTRAST_RULES)} 条规则）")
+
+
 def _ink_and_dirty(im, region=None):
     """统计墨迹占比与"脏像素"数。
 
@@ -340,7 +405,8 @@ def main():
         check_data(strict_sample=a.strict)
         check_fonts()
         check_style(a.style or os.environ.get("POSTER_STYLE"))
-        _print_section("预检（渲染前 · 查数据 + 字体 + 风格）")
+        check_contrast()
+        _print_section("预检（渲染前 · 数据 + 字体 + 风格 + 对比度）")
         total_errors += errors
         total_warns += warns
         oks.clear(); warns.clear(); errors.clear()

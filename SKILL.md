@@ -4,7 +4,7 @@ description: 海报 / 邀请函 / 活动图 / 日历类视觉稿的印刷级生�
 license: MIT
 compatibility: 需要 Typst ≥ 0.13、Python 3.9+、Pillow；中文字体（Windows 自带微软雅黑 / Linux 装 fonts-noto-cjk）
 metadata:
-  version: "2.1.1"
+  version: "2.2.0"
 ---
 
 # 海报 — 中文优先的印刷级海报生成
@@ -51,6 +51,11 @@ Deliver every ratio the poster will actually appear in — with the example prod
 line this is one `build` command, not N rebuilds. A channel the user did not name but
 that obviously applies (a poster shared to 朋友圈 will also be printed) is worth
 producing in one extra render.
+
+**Exact pixel specs, and the areas each platform's UI covers** (Douyin / 视频号 bottom ~15%,
+小红书 bottom ~12%, 易拉宝 bottom ~30cm, print bleed/margins) are in
+`references/platform-specs.md`. Getting a safe area wrong ships a poster whose key line
+sits behind a platform button.
 
 ## Three rendering routes
 
@@ -199,6 +204,23 @@ Guard both, in the layer that owns the constraint:
   screen and fail at the printer. Decode the code back out of the *rendered* file (search the
   whole image, do not hard-code coordinates, so a mispositioned code is caught too) and compare
   against the payload decoded from the source image rather than a hard-coded string.
+
+## Program measures; the model decides
+
+Draw the line between what code does and what the model does. Code is for **measurement
+and geometry** — page size, glyph coverage, colour contrast, collisions, alignment,
+whether the font actually contains the character. The model is for **semantics** — reading
+a subject, choosing a direction, judging balance. Ask a model to measure and it drifts;
+ask a script to judge taste and it cannot.
+
+Two disciplines follow:
+
+- **Check dependencies before a run, and never install silently.** `python scripts/doctor.py`
+  reports what is missing and how to get it; it must not mutate the user's global Python.
+- **Look at the rendered image once, then hand the decision back.** A post-render read should
+  *diagnose* — name the concrete defect — not auto-regenerate in a loop. Unattended repeat
+  regeneration burns budget and usually converges on nothing; report what is wrong and let
+  the user decide. (Borrowed from a peer skill's pre-flight-gates discipline.)
 
 ## Publishing a client-derived template publicly
 
