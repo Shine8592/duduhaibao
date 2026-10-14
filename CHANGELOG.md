@@ -2,6 +2,31 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [2.1.0] — 2026-10-14
+
+> 主题：对标同类项目，补齐「风格 / 比例 / 质检」三块短板。分析与借鉴记录见
+> [`competitive-analysis.md`](competitive-analysis.md)。
+
+### 新增
+- **风格预设库 `lib/styles.typ`**：6 套做过对比度校准的配色方案（商务蓝 / 墨绿 / 雅紫 /
+  活力橙 / 中国红 / 极简墨）。`--input style=<名>`（build 脚本 `--style`）一键换色，
+  模板一行不改。（借鉴乔木 Mondo 1271★ 的「风格库 + 按需选」思路）
+- **风格横向对比**：`scripts/render_styles.py` + `build.sh --styles` / `build.ps1 -Styles`，
+  同一版式并排渲染全部配色，挑一套。
+- **新增格式：横版头图（16:9，1920×1080）** `templates/poster-wide.typ`，用于文章头图 /
+  视频封面。（借鉴竞品的平台比例矩阵）
+- **交付质检清单 `references/qa-rubric.md`**：机器可验项绑定本仓护栏，人眼判断项 +
+  反「通用 AI 观感」清单。（借鉴 Skill2Poster 的 layout QA、poster-style-transfer 的 fidelity rubric）
+- **`competitive-analysis.md`**：与 11 个同类项目的对比、优劣与借鉴记录。
+
+### 变更
+- `preflight.py` 新增**样式闸门**：未知风格名**报错**，而不是让 Typst 静默回退到默认色；
+  并新增 `--list-styles`。
+- `SKILL.md` 增补：「先定形态再定风格」分类步（借鉴 victor-design）、平台比例矩阵、
+  风格预设、反通用 AI 观感、QA 清单引用。
+- README：五种格式、风格预设表、与同类工具对照表、FAQ。
+- **项目中文名由「嘟嘟海报」改为「海报」。**
+
 ## [2.0.0] — 2026-10-14
 
 ### 新增

@@ -10,13 +10,21 @@
 // 所以这里给一条栈，并由 preflight.py 用 `typst fonts` 核对本机是否命中。
 #let FONTS = ("Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei")
 
-// ── 颜色 ──────────────────────────────────────────────────────
-#let BRAND  = rgb("#1B4F8C")   // 主品牌色（换机构/换活动只改这一行）
-#let BRAND2 = rgb("#A8CBEA")   // 品牌浅色
-#let TINT   = rgb("#F4F8FC")   // 极浅品牌底
-#let INK    = rgb("#2B2B2B")   // 正文
-#let MUTED  = rgb("#6E7C8C")   // 次要文字（对比度够小字阅读）
-#let RULE   = rgb("#DCE3EA")   // 细线
+// ── 颜色：从「风格预设」取，换一个名字全篇同步 ─────────────────
+// 用法：typst compile --input style=vivid-orange ...
+// 不传时用 styles.typ 的 DEFAULT_STYLE。名字非法会回退到默认，
+// 并由 preflight 的样式闸门报错拦住 —— 不会静默用错颜色。
+#import "styles.typ": PALETTES, palette, DEFAULT_STYLE
+
+#let STYLE = sys.inputs.at("style", default: DEFAULT_STYLE)
+#let _PAL  = palette(STYLE)
+
+#let BRAND  = _PAL.brand    // 主品牌色
+#let BRAND2 = _PAL.brand2   // 品牌浅色
+#let TINT   = _PAL.tint     // 极浅品牌底
+#let INK    = _PAL.ink      // 正文
+#let MUTED  = _PAL.muted    // 次要文字（对比度够小字阅读）
+#let RULE   = _PAL.rule     // 细线
 
 // ── 二维码：有图用图，无图用占位框 ────────────────────────────
 // 这样"补二维码"始终是改一行数据（data.typ 的 qr_image），不是改版式

@@ -9,8 +9,11 @@
 #          ./build.sh a4           只渲染 A4
 #          ./build.sh social       只渲染朋友圈版
 #          ./build.sh square       只渲染方形封面版
+#          ./build.sh wide         只渲染横版头图
 #          ./build.sh banner       只渲染易拉宝版
 #          ./build.sh all --force  预检报错也强制渲染
+#          ./build.sh --style vivid-orange   换配色（列全部：preflight.py --list-styles）
+#          ./build.sh --styles               同一版式横向对比全部配色
 #
 #  依赖：  typst >= 0.13           https://typst.app
 #          python3 + pillow        pip install pillow
@@ -26,10 +29,28 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 cd "$HERE"
 mkdir -p out
 
-ONLY="${1:-all}"
-FORCE="${2:-}"
+ONLY="all"; FORCE=""; STYLE=""; STYLES_CMP=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --force)   FORCE="--force" ;;
+    --style)   STYLE="${2:-}"; shift ;;
+    --style=*) STYLE="${1#*=}" ;;
+    --styles)  STYLES_CMP=1 ;;
+    -*)        echo "未知参数：$1"; exit 2 ;;
+    *)         ONLY="$1" ;;
+  esac
+  shift
+done
+
 PYTHON="${PYTHON:-python3}"
 PREFLIGHT="$HERE/../scripts/preflight.py"
+
+# 换配色：--input style= 透传给每次 typst 调用；同时导出给预检校验
+STYLE_INPUT=""
+if [ -n "$STYLE" ]; then
+  STYLE_INPUT="--input style=$STYLE"
+  export POSTER_STYLE="$STYLE"
+fi
 
 if ! command -v typst >/dev/null 2>&1; then
   echo "🔴 找不到 typst。安装见 https://typst.app"
@@ -38,6 +59,13 @@ if ! command -v typst >/dev/null 2>&1; then
 fi
 
 echo "════════ 活动海报渲染 ════════"
+
+# ── 风格横向对比（--styles）：渲染同一版式的全部配色 ──
+if [ "$STYLES_CMP" = "1" ]; then
+  case "$ONLY" in a4|social|square|banner) S="$ONLY" ;; *) S="a4" ;; esac
+  "$PYTHON" "$HERE/../scripts/render_styles.py" --root "$HERE" --only "$S"
+  exit $?
+fi
 
 # ─────────────────────────────────────────────────────────────────
 #  闸门 1：渲染前查数据（示例数据 / 必填为空 / 二维码文件缺失）
@@ -68,8 +96,8 @@ t0=$(date +%s%N)
 
 render() {  # name  template  ppi  desc
   local n="$1" t="$2" ppi="$3" desc="$4"
-  typst compile --root . --format png --ppi "$ppi" "$t" "out/$n.png"
-  typst compile --root . "$t" "out/$n.pdf"
+  typst compile --root . $STYLE_INPUT --format png --ppi "$ppi" "$t" "out/$n.png"
+  typst compile --root . $STYLE_INPUT "$t" "out/$n.pdf"
   echo "  ✅ $n  —  $desc"
 }
 
@@ -81,6 +109,9 @@ if [ "$ONLY" = "all" ] || [ "$ONLY" = "social" ]; then
 fi
 if [ "$ONLY" = "all" ] || [ "$ONLY" = "square" ]; then
   render poster-square  templates/poster-square.typ  192 "方形封面版  2160x2160px (1:1)"
+fi
+if [ "$ONLY" = "all" ] || [ "$ONLY" = "wide" ]; then
+  render poster-wide    templates/poster-wide.typ    96  "横版头图    1920x1080px (16:9)"
 fi
 if [ "$ONLY" = "all" ] || [ "$ONLY" = "banner" ]; then
   render poster-banner  templates/poster-banner.typ  100 "易拉宝版    3150x7874px (80x200cm)"

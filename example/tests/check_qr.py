@@ -81,7 +81,7 @@ def main():
         return 0
     print(f"  {DIM}期望值（来自 {srcfile}）：{want}{OFF}")
 
-    outputs = ["poster-a4", "poster-social", "poster-square", "poster-banner"]
+    outputs = ["poster-a4", "poster-social", "poster-square", "poster-wide", "poster-banner"]
     checked = failed = 0
 
     for n in outputs:

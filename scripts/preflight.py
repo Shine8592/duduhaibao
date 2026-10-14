@@ -32,6 +32,7 @@ FORMATS = {
     "poster-a4":     (2480, 3508, 60,  "A4 打印版"),
     "poster-social": (2160, 2880, 60,  "朋友圈版"),
     "poster-square": (2160, 2160, 60,  "方形封面版"),
+    "poster-wide":   (1920, 1080, 30,  "横版头图"),
     "poster-banner": (3150, 7874, 240, "易拉宝版"),
 }
 
@@ -196,6 +197,43 @@ def check_fonts():
         ok(f"首选字体可用：{stack[0]}")
 
 
+# ─────────────────────────────────────────────────────────────────
+#  渲染前：风格预设校验（--input style=...）
+#
+#  模板颜色取自 lib/styles.typ 的命名方案。名字写错时 Typst 会静默回退到
+#  默认色 —— 又是一类静默失败。这里核对请求的风格是否存在于方案库。
+# ─────────────────────────────────────────────────────────────────
+def parse_styles() -> dict:
+    p = os.path.join(ROOT, "lib", "styles.typ")
+    if not os.path.exists(p):
+        return {}
+    src = open(p, encoding="utf-8").read()
+    out = {}
+    for m in re.finditer(r'"([a-z0-9\-]+)"\s*:\s*\(([\s\S]*?)\n\s*\),', src):
+        key, body = m.group(1), m.group(2)
+        lm = re.search(r'label:\s*"([^"]*)"', body)
+        if not lm:
+            continue
+        um = re.search(r'use:\s*"([^"]*)"', body)
+        out[key] = {"label": lm.group(1), "use": um.group(1) if um else ""}
+    return out
+
+
+def check_style(requested):
+    styles = parse_styles()
+    if not styles:
+        warn("未找到 lib/styles.typ，跳过风格检查")
+        return
+    if not requested:
+        ok(f"风格库 {len(styles)} 套：{'、'.join(styles)}")
+        return
+    if requested in styles:
+        s = styles[requested]
+        ok(f'风格 "{requested}"（{s["label"]}）—— {s["use"]}')
+    else:
+        err(f'未知风格 "{requested}"，可选：' + "、".join(styles))
+
+
 def _ink_and_dirty(im, region=None):
     """统计墨迹占比与"脏像素"数。
 
@@ -277,12 +315,21 @@ def main():
     ap.add_argument("--output", action="store_true", help="只检查渲染后的成品")
     ap.add_argument("--all", action="store_true", help="数据+成品都检查")
     ap.add_argument("--strict", action="store_true", help="把示例数据警告升级为错误")
+    ap.add_argument("--style", default=None, help="校验指定风格名（styles.typ）")
+    ap.add_argument("--list-styles", action="store_true", help="列出全部风格并退出")
     a = ap.parse_args()
 
     if a.root:
         global ROOT, DATA
         ROOT = os.path.abspath(a.root)
         DATA = os.path.join(ROOT, "lib", "data.typ")
+
+    if a.list_styles:
+        styles = parse_styles()
+        print("可用风格（--input style=<名>）：")
+        for k, v in styles.items():
+            print(f"  {k:<16} {v['label']:<8} {v['use']}")
+        return 0
 
     # 两段各跑各的，最后给一条总结论 —— 避免中间那条
     # "预检全部通过" 被误读成整体结论
@@ -292,7 +339,8 @@ def main():
     if not a.output:
         check_data(strict_sample=a.strict)
         check_fonts()
-        _print_section("预检（渲染前 · 查数据 + 字体）")
+        check_style(a.style or os.environ.get("POSTER_STYLE"))
+        _print_section("预检（渲染前 · 查数据 + 字体 + 风格）")
         total_errors += errors
         total_warns += warns
         oks.clear(); warns.clear(); errors.clear()

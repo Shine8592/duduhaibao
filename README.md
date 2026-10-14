@@ -1,6 +1,6 @@
-# 嘟嘟海报 · duduhaibao
+# 海报 · duduhaibao
 
-> 一套数据，一键出 **A4 打印版 / 朋友圈版 / 方形封面版 / 易拉宝版** 四种格式的活动海报。
+> 一套数据，一键出 **A4 打印版 / 朋友圈版 / 方形封面版 / 横版头图 / 易拉宝版** 五种格式的活动海报。
 > 附**三层护栏**：静默排版 bug 会在编译期大声报错，而不是悄悄印错。
 
 ![预览](assets/preview-all.jpg)
@@ -20,8 +20,8 @@
 一个**中文优先**的印刷级海报生成工具包。核心不是"又一个海报模板"，而是三件事：
 
 1. **排版引擎直连** —— 用 Typst 编译成 PDF/PNG，不套 MCP、不起服务、不装 Chromium（省 170MB），
-   冷启动渲染四种格式 **约 4 秒**。
-2. **数据与版式分离** —— 出新稿只改一个 `lib/data.typ`，四种格式同步更新。
+   冷启动渲染五种格式 **约 4 秒**。
+2. **数据与版式分离** —— 出新稿只改一个 `lib/data.typ`，五种格式同步更新。
 3. **护栏体系** —— 排版类 bug 最恶心的地方是**静默**：列宽不够会把 `01` 悄悄裁成 `0`，
    内容溢出页面会被无声切掉，而编译器**一声不吭**。这个项目把它们变成大声报错。
 
@@ -40,8 +40,10 @@ cd duduhaibao/example
 #   Linux:   cargo install typst-cli && pip install pillow
 #   Windows: winget install Typst.Typst   （或下载 typst.exe 放进 PATH）
 
-./build.sh              # 四种格式一起出（含预检 + 后检）  ← macOS / Linux
+./build.sh              # 五种格式一起出（含预检 + 后检）  ← macOS / Linux
 .\build.ps1             # 同上，Windows PowerShell 原生版
+./build.sh --style vivid-orange   # 换配色（6 套内置，见「风格预设」）
+./build.sh --styles               # 同一版式横向对比全部配色
 ```
 
 产物在 `example/out/`：
@@ -51,6 +53,7 @@ cd duduhaibao/example
 | `poster-a4.png` / `.pdf` | 2480×3508px（210×297mm @300dpi）| 打印、张贴 |
 | `poster-social.png` / `.pdf` | 2160×2880px（3:4）| 朋友圈、手机屏 |
 | `poster-square.png` / `.pdf` | 2160×2160px（1:1）| 公众号首图、小红书封面 |
+| `poster-wide.png` / `.pdf` | 1920×1080px（16:9）| 文章头图、视频封面 |
 | `poster-banner.png` / `.pdf` | 3150×7874px（80×200cm @100dpi）| 易拉宝、展架 |
 
 **出新稿** —— 只改 `example/lib/data.typ`：
@@ -90,11 +93,58 @@ cd duduhaibao/example
 
 ---
 
+## 风格预设 —— 换一个名字，全篇换色
+
+配色不散落在模板里，而是集中在 `lib/styles.typ`，每个方案都做过对比度校准：
+
+| 名称 | 调性 | 适合 |
+|---|---|---|
+| `formal-blue` | 商务蓝 | 企业发布会 / 公开课 / 正式活动（默认）|
+| `ink-green` | 墨绿 | 学术讲座 / 文化沙龙 / 自然环保 |
+| `royal-purple` | 雅紫 | 品牌发布 / 设计 / 女性向 |
+| `vivid-orange` | 活力橙 | 社群 / 亲子 / 市集 / 招生 |
+| `crimson` | 中国红 | 节庆 / 年会 / 典礼 / 内购 |
+| `mono-slate` | 极简墨 | 极简 / 数据报告 / 内部分享 |
+
+```bash
+./build.sh --style vivid-orange      # 换配色，模板一行不改
+./build.sh --styles                  # 同一版式 × 6 套配色并排渲染，挑一套
+python scripts/preflight.py --root . --list-styles   # 列出全部
+```
+
+风格名写错会被 `preflight.py` **报错拦住**，不会静默用默认色。
+
+---
+
+## 和同类工具比
+
+同赛道（GitHub 按 star 排序）大多是**图片模型提示词生成器**，不是渲染器：
+
+| 维度 | 提示词型（乔木 Mondo 1271★ / 大羽 / design-poster 等）| **本仓** |
+|---|---|---|
+| 生成方式 | 文生图 / 图生图 | **Typst 确定性渲染** |
+| 文字准确性 | ⚠️ 常乱码，需预留文字区手工排字 | ✅ **永不乱码**（真排版）|
+| 交付物 | 位图 | **矢量 PDF + PNG** |
+| 依赖 | 需图片模型 API key | **零 API、零成本、纯本地** |
+| 一致性 | 每次随机 | **可复现**（同数据必得同稿）|
+| 护栏 | 靠提示词纪律 | **可执行闸门**（断言 / 像素 / 回归）|
+| 多格式产线 | 一次一图 | **改一个文件出全规格** |
+
+完整对比与借鉴记录见 [`competitive-analysis.md`](competitive-analysis.md)。
+
+> 诚实边界：我们不擅长"把照片艺术化重构"（那是生图模型的强项）。要那种效果，
+> 可用生图模型出**设计参考**，再按 `references/reference-and-ip-matching.md` 的流程
+> 确定性重建——把「创意」和「准确」分开。
+
+---
+
 ## 项目结构
 
 ```
 duduhaibao/
 ├── SKILL.md                  # 技能定义（可放进 opencode / Hermes 的 skills/ 目录）
+├── competitive-analysis.md   # 同类项目对比与借鉴记录
+├── CHANGELOG.md              # 版本变更
 ├── references/               # 分路线深度参考
 │   ├── typst-route.md        #    Typst 手册 + 完整踩坑清单
 │   ├── pillow-page-layout.md #    Pillow A4 几何 / 圆角 / 投影 / 比例裁切
@@ -103,16 +153,19 @@ duduhaibao/
 │   ├── calendar-and-date-grids.md  # 日历/日期栅格类（风险模型与海报不同）
 │   ├── reference-and-ip-matching.md # 按参考图/指定 IP 做设计
 │   ├── raster-text-repair.md #    改已有成品图上的错字（不重排）
-│   └── publishing-publicly.md#    把客户定制模板开源出去的去标识化流程
+│   ├── publishing-publicly.md#    把客户定制模板开源出去的去标识化流程
+│   └── qa-rubric.md          #    交付质检清单（机器可验 + 人眼判断）
 ├── scripts/
 │   ├── preflight.py          # 预检：渲染前查数据+字体 / 渲染后查成品
 │   ├── make_preview.py       # 生成最长边 1400px 的预览 JPG
+│   ├── render_styles.py      # 同一版式 × 多套配色，横向对比
 │   ├── render_html_to_png.py # HTML → PNG/PDF（零浏览器）
 │   └── audit_public_release.sh # 公开前的泄漏扫描（发布者自查用）
 ├── example/                  # 可直接运行的完整示例
 │   ├── lib/data.typ          # ★ 唯一真源：只改这里
+│   ├── lib/styles.typ        #   命名配色方案库（--input style=…）
 │   ├── lib/tokens.typ        #   设计 token + 断言护栏
-│   ├── templates/            #   四种格式的版式
+│   ├── templates/            #   五种格式的版式
 │   ├── build.sh              #   一键渲染 + 两道闸（macOS / Linux）
 │   ├── build.ps1             #   同上，Windows PowerShell 原生版
 │   └── tests/                #   回归测试
@@ -350,6 +403,45 @@ cp -r duduhaibao ~/.hermes/skills/poster-design
 
 ---
 
+## 常见问题
+
+<details>
+<summary><b>我不懂设计，能用吗？</b></summary>
+
+能。改 `example/lib/data.typ` 的文案 → 从 6 套风格里挑一个配色 → 跑 `build`，五种格式
+一起出。不需要设计基础，也不需要 API key。
+</details>
+
+<details>
+<summary><b>和那些「一句话出海报」的 AI 工具有什么不同？</b></summary>
+
+它们把文案交给图片模型，文字经常乱码、得预留区域手工排字；本仓用 Typst **真排版**，
+标题 / 日期 / 价格**永不乱码**，还能出矢量 PDF。代价：不擅长把照片做艺术化重构——
+那种需求建议用生图模型出参考图，再按 `references/reference-and-ip-matching.md` 确定性重建。
+</details>
+
+<details>
+<summary><b>需要联网 / API key 吗？</b></summary>
+
+不需要。纯本地：Typst 二进制 + Python + Pillow。零常驻进程、零外部服务、零隐私外传。
+</details>
+
+<details>
+<summary><b>怎么换颜色 / 换活动？</b></summary>
+
+换活动：只改 `example/lib/data.typ`。换配色：`./build.sh --style <名>`（`--list-styles`
+看全部）。想加配色：往 `lib/styles.typ` 加一条即可。
+</details>
+
+<details>
+<summary><b>中文变方块 / 排版怪怎么办？</b></summary>
+
+先跑 `python scripts/preflight.py --root example`，它会告诉你字体是否命中、数据是否齐全、
+样式名是否合法。中文方块 = 字体栈在本机一个都没命中（Windows 自带微软雅黑，直接用即可）。
+</details>
+
+---
+
 ## 依赖
 
 | 依赖 | 版本 | 装法 |
@@ -376,9 +468,14 @@ cp -r duduhaibao ~/.hermes/skills/poster-design
 ## English
 
 **duduhaibao** is a Chinese-first, print-ready poster generator. One data file drives
-four physical formats (A4 print, 3:4 social, 1:1 square cover, 80×200cm roll-up banner),
-rendered by Typst with no browser, no server, and no MCP layer — roughly 4 seconds cold
-for all four. Build with `./build.sh` (macOS/Linux) or `.\build.ps1` (Windows).
+five physical formats (A4 print, 3:4 social, 1:1 square cover, 16:9 wide header,
+80×200cm roll-up banner), rendered by Typst with no browser, no server, and no MCP layer —
+roughly 4 seconds cold for all five. Colours come from a named palette library
+(`--style <name>`), and the build is reproducible: the same data always renders the same
+artwork. Build with `./build.sh` (macOS/Linux) or `.\build.ps1` (Windows).
+
+Unlike the prompt-based poster skills in this space — which hand text to an image model and
+fight garbled output — this renders deterministically. **The text is never wrong.**
 
 Its distinguishing feature is **guarding against silent layout failure**. Typesetting fails
 loudly on syntax errors but silently on clipping — a too-narrow grid column renders `01` as

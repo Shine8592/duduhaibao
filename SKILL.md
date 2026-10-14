@@ -4,10 +4,10 @@ description: 海报 / 邀请函 / 活动图 / 日历类视觉稿的印刷级生�
 license: MIT
 compatibility: 需要 Typst ≥ 0.13、Python 3.9+、Pillow；中文字体（Windows 自带微软雅黑 / Linux 装 fonts-noto-cjk）
 metadata:
-  version: "2.0.0"
+  version: "2.1.0"
 ---
 
-# 嘟嘟海报 — 中文优先的印刷级海报生成
+# 海报 — 中文优先的印刷级海报生成
 
 > **工具名说明（跨 Agent）**：本文用 `read`（看图 —— 用多模态模型读取 PNG）与 `question`
 > （向用户摆出选项确认）—— 二者是 opencode 原生工具。若在 Hermes 下使用，分别对应
@@ -23,6 +23,7 @@ It also covers **date-grid artifacts** — calendars, year/month series, schedul
 
 ## Procedure
 
+0. **Classify the form before styling anything.** Decide what the deliverable actually *is* — one poster, a graphic set, a date grid, a raster revision — because the form picks the route and the references; style is the *last* decision, not the first. (Borrowed from the "form before styling" discipline in a leading design skill.)
 1. **Resolve the deliverable before building.** When the user sends an image, or an image plus a block of copy, with no explicit ask, it usually maps to several plausible outputs (poster, invitation PNG, deck, or written copy only). Inspect the image with `read`, then use `question` with concrete options, recommended first. Building the wrong artifact burns the whole cycle.
 2. **Harvest the source photo for design vocabulary.** Read the subject's own signage, labels, stickers, packaging words, and decorations with `read`; that material is free, authentic vocabulary that ties the poster to the real event. Echo one or two motifs in the layout (bunting for a market, plant doodles for a gardening activity, the photo's label wording in the body copy).
 3. **Choose the page size** per target channel (table below).
@@ -34,13 +35,22 @@ It also covers **date-grid artifacts** — calendars, year/month series, schedul
 ## Page sizes
 
 Build the CSS page at 1x and render at `--scale 2`; the artifact is the 2x PNG.
+Pick the **ratio** from the channel, then a physical spec:
 
-| Channel | CSS px | 2x output | Ratio |
-|---|---|---|---|
-| Print / 公众号 / group large image | 1240 × 1754 | 2480 × 3508 | ~3:4 (A4) |
-| 朋友圈 / WeChat Moments / single-send | 1080 × 1440 | 2160 × 2880 | 3:4 |
+| Channel | Ratio | Spec (printed/baked) |
+|---|---|---|
+| Print / 张贴 | A4 210×297mm | 2480 × 3508 px @300dpi |
+| 朋友圈 / WeChat Moments / single-send | 3:4 | 2160 × 2880 |
+| 公众号首图 / 小红书封面 | 1:1 | 2160 × 2160 |
+| 文章头图 / 视频封面 | 16:9 | 1920 × 1080 |
+| 公众号文章头图（超宽） | 21:9 | build it; not in the example line |
+| 手机全屏 / Story / 竖屏海报 | 9:16 | build it; not in the example line |
+| 易拉宝 / roll-up banner | 80×200cm | 3150 × 7874 px @100dpi |
 
-Deliver both when the poster will be both shared and printed — it costs one extra render job.
+Deliver every ratio the poster will actually appear in — with the example production
+line this is one `build` command, not N rebuilds. A channel the user did not name but
+that obviously applies (a poster shared to 朋友圈 will also be printed) is worth
+producing in one extra render.
 
 ## Three rendering routes
 
@@ -98,8 +108,9 @@ rebuild it — build the **line**. Separate three layers so only the first one c
 
 ```
 lib/data.typ      ← the ONLY file edited per issue: copy, speaker, date, venue, QR path
-lib/tokens.typ    ← palette, type scale, shared components (info_row / highlights / brand band)
-templates/*.typ   ← one file per physical format, all importing the two libs
+lib/styles.typ    ← named colour palettes (switch with --input style=<name>)
+lib/tokens.typ    ← type scale + shared components (info_row / highlights / brand band)
+templates/*.typ   ← one file per physical format, all importing the libs
 build.sh          ← one command renders every format
 ```
 
@@ -124,6 +135,32 @@ build.sh          ← one command renders every format
 - **The tool layer is not where knowledge lives.** An engine called directly teaches you the
   pitfalls, and those lessons go back into this skill; a wrapped tool hides them, so the same
   failure is rediscovered every few months.
+
+## Style presets — one name, the whole palette
+
+Colour lives in `lib/styles.typ`, not as literals scattered through templates. Each entry
+is a named, contrast-checked palette (`formal-blue`, `ink-green`, `royal-purple`,
+`vivid-orange`, `crimson`, `mono-slate`). Switch the whole document with one flag, no
+template edit:
+
+```bash
+./build.sh --style vivid-orange     # PowerShell: .\build.ps1 -Style vivid-orange
+./build.sh --styles                 # render one format in every palette, side by side
+python scripts/preflight.py --root . --list-styles
+```
+
+A competitor skill ships dozens of *artist* styles because its output is an image-model
+prompt. A deterministic render does not need that — it needs a small set of **calibrated
+palettes**. An unknown style name is **rejected by `preflight.py`**, never silently swapped
+for the default.
+
+## Anti-generic-AI check
+
+A render can be technically correct and still read as "generic AI output". Before
+delivering, scan for the tells: "professional" mistaken for dark / high-contrast / dense,
+decorative blobs and gratuitous gradients, stacked buzzwords in the copy, a rainbow of
+accent colours, icons that rendered as tofu. The full checklist is in
+`references/qa-rubric.md`.
 
 ## Guarding a render pipeline
 
@@ -267,11 +304,15 @@ series. Full sequence and the scene-sizing formula: `references/reference-and-ip
 ## Verification checklist
 
 - [ ] Deliverable type confirmed with the user when the request was ambiguous.
+- [ ] Form classified before styling (poster / set / date grid / raster revision).
+- [ ] Palette chosen from `lib/styles.typ` (default ok); an unknown style name would be **rejected**, not silently defaulted.
 - [ ] Style direction matches the occasion's register.
+- [ ] Every ratio the poster appears in was produced (see the channel matrix above).
 - [ ] Page size matches the target channel; both sizes produced when needed.
 - [ ] Photo cropped to the container ratio before embedding.
 - [ ] Fonts appropriate to rasterized vs editable output.
 - [ ] PNG inspected with `read`: all text read back, no overlap, no clipping, icons rendered.
 - [ ] Any QR code decoded **out of the final artifact** (not just the source file), with a ≥4-module quiet zone.
+- [ ] `references/qa-rubric.md` walked through, including the anti-generic-AI pass.
 - [ ] Output dimensions and file paths stated in the reply.
 - [ ] For revisions: every asserted error verified at magnification; changed-pixel count reported; untouched regions explicitly named.
