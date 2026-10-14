@@ -110,6 +110,27 @@ dist/20261014/
 
 ---
 
+## 参考图 → 确定性复刻
+
+客户发来「照这个感觉做」的参考图？先提取它的**语法**（Extract poster grammar, not content）：
+
+```bash
+python scripts/analyze_reference.py --image 参考图.jpg --out out/ref --name myref
+```
+
+产出三样东西：
+- **`myref-analysis.png`** —— 带标注的**结构叠加图**（横带红框 + 竖栏蓝线 + 色卡），先目视核验检测对不对；
+- **`myref-report.md`** —— 比例、建议格式、色板表（含 WCAG 对比度）、横带/竖栏结构表；
+- **`myref-palette.typ`** —— 可直接粘进 `lib/styles.typ` 的配色片段（对比度闸门会自动校验）。
+
+竞品 poster-style-transfer 靠模型"看"图写提示词；我们用**可测量**的方式给出结构，
+**能逐带核对**，而且直接接进本仓的确定性渲染产线。详见
+[`references/reference-extraction.md`](references/reference-extraction.md)。
+
+> 本地图也能验：拿本仓自己的成品当参考图跑一遍，会还原出品牌色与主要横带（往返测试）。
+
+---
+
 ## 三条渲染路线
 
 选错路线会白干一整轮，所以先对表：
@@ -199,11 +220,13 @@ duduhaibao/
 │   ├── publishing-publicly.md#    把客户定制模板开源出去的去标识化流程
 │   ├── qa-rubric.md          #    交付质检清单（机器可验 + 人眼判断）
 │   ├── platform-specs.md     #    各平台画幅/像素/UI 遮挡安全区
-│   └── delivery-guide.md     #    投放规格：格式/体积上限/常见坑
+│   ├── delivery-guide.md     #    投放规格：格式/体积上限/常见坑
+│   └── reference-extraction.md #  参考图 → 提取色板/结构/比例（语法提取流程）
 ├── scripts/
 │   ├── preflight.py          # 预检：数据+字体+风格+对比度 / 成品
 │   ├── doctor.py             # 环境自检（只报告不安装）
 │   ├── export_pack.py        # 一键交付包：分类 + 平台友好 JPEG + 清单 + zip
+│   ├── analyze_reference.py  # 参考图 → 色板/结构/比例（带标注叠加图）
 │   ├── make_preview.py       # 生成最长边 1400px 的预览 JPG
 │   ├── render_styles.py      # 同一版式 × 多套配色，横向对比
 │   ├── render_html_to_png.py # HTML → PNG/PDF（零浏览器）
