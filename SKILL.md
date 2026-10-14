@@ -4,7 +4,7 @@ description: 海报 / 邀请函 / 活动图 / 日历类视觉稿的印刷级生�
 license: MIT
 compatibility: 需要 Typst ≥ 0.13、Python 3.9+、Pillow；中文字体（Windows 自带微软雅黑 / Linux 装 fonts-noto-cjk）
 metadata:
-  version: "3.2.0"
+  version: "4.0.0"
 ---
 
 # 海报 — 中文优先的印刷级海报生成
@@ -245,6 +245,14 @@ Default to the warm/cartoon direction for any event built around an activity peo
 
 Build both kits from the same primitives so only tokens change: background wash + accent blobs, a header chip row, a framed photo with tape or border accents, a title block with a small ornament, info cards per line item, and a footer line. Full element vocabulary, palettes, and the complete cartoon kit specification are in `references/style-directions.md`.
 
+**Both directions are implemented now.** The shipped example line has the formal set
+(`poster-a4 / social / square / story / wide / banner`) *and* the playful set:
+**`poster-cute`** (rounded cards, numbered badges, sticker dots, a rounded CJK face —
+`FONTS_CUTE` = YouYuan → FZShuTi → KaiTi → Noto SC), **`poster-term`** (solar-term cards,
+dates computed by `scripts/solar_terms.py`, never by the model), and **`poster-photo`**
+(a photo set that auto-adapts 1 / 2 / 3 / 4+ layouts). Switch the entire look with
+`--style <name>` (24 palettes in 4 groups: 正式 / 文艺 / 活力 / **可爱**).
+
 ## Fonts
 
 - **Rasterized output may use any font. Editable output may not.** PNG output bakes glyphs into pixels, so a decorative CJK display font ships fine and the viewer installs nothing. The cross-platform constraint (Microsoft YaHei / 微软雅黑 for editable CJK, Arial/Calibri for Latin) applies only to files the user opens and edits in PowerPoint/Word. Do not refuse a display font for a PNG, and do not put one inside an editable file.
@@ -321,6 +329,11 @@ series. Full sequence and the scene-sizing formula: `references/reference-and-ip
 - **Check the page size actually matches the viewport.** If the HTML declares a page size different from the screenshot viewport or clip, the PNG silently reflows or truncates. Assert the returned image dimensions equal width × scale.
 - **Verify the final artifact, not the HTML.** Typography and balance defects surface only in the rendered PNG.
 - **Keep decorative SVG inline in the HTML.** Inline `<svg>` is reliable in headless Chromium and needs no asset files.
+- **Never write `.at(i, default: panic(...))` in Typst.** Arguments are evaluated **eagerly**, so the `panic` fires unconditionally — the guard itself becomes the bug. Check the length first, then take the element.
+- **`image()` paths are relative to the calling `.typ` file, not the project root.** Under `--root .` only a leading slash is root-relative: `image("/photos/01.jpg")`. Same trap as `qr_slot` in `tokens.typ`. Also: a `block(radius:, clip: true, image(fit: "cover"))` gives you a rounded, ratio-cropped photo cell.
+- **A page-level `par(leading)` will not tighten a `grid`'s rows.** A single-line grid cell's height comes from the **font metrics** (~1.73em for Noto CJK), so neither the block's nor the page's `leading` changes it — only the font size and an explicit `v(gap)` do. To tighten a list, shrink the font or the gap; to fix rhythm, move the block.
+- **`v()` is weak spacing by default and gets swallowed inside a large block.** List items then render with no gap at all. Use `v(gap, weak: false)`.
+- **Keep decorative elements out of the declared bottom-safety strip.** The gate compares the strip against the page's background (sampled from the **bottom two corners** — sampling all four breaks when a full-width brand band makes the top corners a different colour). A bleeding blob that reaches into the strip will (correctly) fail the gate.
 - **Keep color blobs and borders behind the text layer.** Re-check contrast in the vision pass.
 
 ## Verification checklist

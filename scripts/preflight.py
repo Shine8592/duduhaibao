@@ -19,6 +19,7 @@ import os
 import re
 import subprocess
 import sys
+from collections import Counter
 
 # 项目根：默认当前工作目录，可用 --root 覆盖。
 # （不默认脚本所在目录：这个脚本放在项目外的 scripts/ 里，
@@ -33,6 +34,9 @@ FORMATS = {
     "poster-social": (2160, 2880, 60,  "朋友圈版"),
     "poster-square": (2160, 2160, 60,  "方形封面版"),
     "poster-story":  (1080, 1920, 288, "竖屏 Story"),
+    "poster-cute":   (2160, 2880, 60,  "可爱版"),
+    "poster-term":   (1080, 1080, 30,  "节气版"),
+    "poster-photo":  (1080, 1440, 30,  "照片集"),
     "poster-wide":   (1920, 1080, 30,  "横版头图"),
     "poster-banner": (3150, 7874, 240, "易拉宝版"),
 }
@@ -161,18 +165,20 @@ def check_data(strict_sample: bool):
 #  没有，Typst 不会报错，而是【静默回退】到默认字体，版式悄悄走样 ——
 #  这正是本项目要消灭的那类静默失败。这里用 `typst fonts` 核对。
 # ─────────────────────────────────────────────────────────────────
-def parse_font_stack(tokens_path: str) -> list:
-    """从 tokens.typ 抠出 FONTS 字体栈里的字体名（按优先级）。"""
+def parse_font_stacks(tokens_path: str) -> dict:
+    """从 tokens.typ 抠出所有 `#let FONTS* = (...)` 字体栈：{变量名: [字体, ...]}。"""
     if not os.path.exists(tokens_path):
-        return []
+        return {}
     src = open(tokens_path, encoding="utf-8").read()
-    m = re.search(r'FONTS\s*=\s*\((.*?)\)', src, re.S)
-    return re.findall(r'"([^"]+)"', m.group(1)) if m else []
+    out = {}
+    for m in re.finditer(r'#let\s+(FONTS\w*)\s*=\s*\((.*?)\)', src, re.S):
+        out[m.group(1)] = re.findall(r'"([^"]+)"', m.group(2))
+    return out
 
 
 def check_fonts():
-    stack = parse_font_stack(os.path.join(ROOT, "lib", "tokens.typ"))
-    if not stack:
+    stacks = parse_font_stacks(os.path.join(ROOT, "lib", "tokens.typ"))
+    if not stacks:
         warn("未在 lib/tokens.typ 找到 FONTS 字体栈，跳过字体可用性检查")
         return
     try:
@@ -187,15 +193,18 @@ def check_fonts():
 
     out = (r.stdout or b"").decode("utf-8", errors="replace")
     have = {ln.strip() for ln in out.splitlines() if ln.strip()}
-    available = [f for f in stack if f in have]
-    if not available:
-        err("字体栈在本机一个都不可用：" + " / ".join(stack)
-            + " —— 渲染会【静默回退】到默认字体，版式会变！")
-    elif available[0] != stack[0]:
-        warn(f'首选字体 "{stack[0]}" 本机没有，回退到 "{available[0]}"'
-             f'（跨平台正常，但要确认版式未走样）')
-    else:
-        ok(f"首选字体可用：{stack[0]}")
+    for name, stack in stacks.items():
+        if not stack:
+            continue
+        available = [f for f in stack if f in have]
+        if not available:
+            err(f"{name} 字体栈在本机一个都不可用：" + " / ".join(stack)
+                + " —— 渲染会【静默回退】到默认字体，版式会变！")
+        elif available[0] != stack[0]:
+            warn(f'{name} 首选字体 "{stack[0]}" 本机没有，回退到 "{available[0]}"'
+                 f'（跨平台正常，但要确认版式未走样）')
+        else:
+            ok(f"{name} 首选字体可用：{stack[0]}")
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -300,6 +309,31 @@ def check_contrast():
         ok(f"对比度全部达标（{len(palettes)} 套配色 × {len(CONTRAST_RULES)} 条规则）")
 
 
+def _corner_bg(im, patch=20):
+    """取「底部两角」采样的众数作为页面底色。
+    ⚠️ 不能取四角：很多版式顶部是通栏品牌带，顶部两角是品牌色，会与底部白角打平选错。
+    也不能写死白色：节气版等整页浅色底的版式，底部净空应与底色一致。"""
+    w, h = im.size
+    pts = []
+    for x0 in (0, w - patch):
+        for x in range(x0, x0 + patch, 4):
+            for y in range(h - patch, h, 4):
+                pts.append(im.getpixel((x, y)))
+    return Counter(pts).most_common(1)[0][0]
+
+
+def _strip_dirty(im, region, bg, tol=8):
+    """返回（与底色不符的像素数, 总像素数）。"""
+    data = im.crop(region).tobytes()
+    total = len(data) // 3
+    dirty = 0
+    for i in range(0, len(data), 3):
+        if (abs(data[i] - bg[0]) > tol or abs(data[i + 1] - bg[1]) > tol
+                or abs(data[i + 2] - bg[2]) > tol):
+            dirty += 1
+    return dirty, total
+
+
 def _ink_and_dirty(im, region=None):
     """统计墨迹占比与"脏像素"数。
 
@@ -355,9 +389,11 @@ def check_output():
             err(f"{desc}：几乎空白（墨迹 {ink*100:.2f}%），渲染可能失败")
             continue
 
-        # ② 底部净空必须纯白 —— 抓"内容被静默裁到页面外"
-        d2, t2 = _ink_and_dirty(im, region=(0, h - safe_bottom, w, h))
-        if d2 > 0:
+        # ② 底部净空必须与「页面底色」一致 —— 抓"内容被静默裁到页面外"
+        #    底色取自四角采样（不写死白色：节气版等整页浅色底的版式会误报）
+        bg = _corner_bg(im)
+        d2, t2 = _strip_dirty(im, (0, h - safe_bottom, w, h), bg)
+        if d2 > max(1, int(t2 * 0.005)):
             err(
                 f"{desc}：底部 {safe_bottom}px 净空区有内容（{d2/t2*100:.2f}%），"
                 f"可能有元素被裁到页面外"

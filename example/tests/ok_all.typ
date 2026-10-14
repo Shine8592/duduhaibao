@@ -14,6 +14,9 @@
 // 竖屏 Story 配置
 #highlights(("a","b","c"), num_size: px(28), txt_size: px(33))
 #info_row("活动时间", "2026年12月5日（周六）14:00", label_w: px(172), size: px(32))
+// 可爱版配置
+#highlights(("a","b","c"), num_size: px(24), txt_size: px(30))
+#info_row("时间", "2026年12月5日（周六）14:00", label_w: px(96), size: px(26))
 // 横版头图配置
 #highlights(("a","b","c"), num_size: px(24), txt_size: px(27))
 #info_row("活动时间", "2026年12月5日（周六）14:00", label_w: px(160), size: px(28))

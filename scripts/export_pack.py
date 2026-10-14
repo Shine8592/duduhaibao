@@ -34,6 +34,9 @@ PURPOSE = {
     "poster-social": ("social", "朋友圈版",    "朋友圈 / 小红书（3:4）"),
     "poster-square": ("social", "方形封面版",  "公众号首图 / 小红书封面（1:1）"),
     "poster-story":  ("social", "竖屏 Story",  "抖音 / 视频号 / 快手 / IG Story（9:16）"),
+    "poster-cute":   ("social", "可爱版",      "幼儿园 / 亲子 / 儿童（3:4）"),
+    "poster-term":   ("social", "节气版",      "节气 / 节日问候（1:1）"),
+    "poster-photo":  ("social", "照片集",      "朋友圈游玩 / 旅行记录（3:4）"),
     "poster-wide":   ("social", "横版头图",    "文章头图 / 视频封面 / 微博（16:9）"),
 }
 

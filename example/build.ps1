@@ -9,7 +9,8 @@
 #          .\build.ps1 a4           只渲染 A4
 #          .\build.ps1 social       只渲染朋友圈版
 #          .\build.ps1 square       只渲染方形封面版
-#          .\build.ps1 wide         只渲染横版头图
+#          .\build.ps1 story        只渲染竖屏 Story
+#          .\build.ps1 cute         只渲染可爱版（默认配色 candy-pink）
 #          .\build.ps1 banner       只渲染易拉宝版
 #          .\build.ps1 all -Force   预检报错也强制渲染
 #          .\build.ps1 -Style vivid-orange   换配色（列全部：preflight.py --list-styles）
@@ -59,6 +60,9 @@ if ($Styles) {
 # 换配色：导出给预检校验（typst 侧由 Render 传 --input）
 if ($Style) { $env:POSTER_STYLE = $Style }
 
+# 每个格式的默认配色（未显式 -Style 时生效）
+$DefaultStyle = @{ "poster-cute" = "candy-pink"; "poster-term" = "teal" }
+
 # ─────────────────────────────────────────────────────────────────
 #  闸门 1：渲染前查数据 + 字体可用性
 # ─────────────────────────────────────────────────────────────────
@@ -85,8 +89,10 @@ elseif ($env:SKIP_PREFLIGHT -eq "1") {
 $t0 = Get-Date
 
 function Render($name, $template, $ppi, $desc) {
+  $st = $Style
+  if (-not $st -and $DefaultStyle.ContainsKey($name)) { $st = $DefaultStyle[$name] }
   $extra = @()
-  if ($Style) { $extra = @("--input", "style=$Style") }
+  if ($st) { $extra = @("--input", "style=$st") }
   $pngArgs = @("compile", "--root", ".", "--format", "png", "--ppi", "$ppi") + $extra + @($template, "out/$name.png")
   typst @pngArgs
   if ($LASTEXITCODE -ne 0) { throw "typst 渲染 $name.png 失败" }
@@ -100,6 +106,9 @@ if ($Only -eq "all" -or $Only -eq "a4") { Render "poster-a4" "templates/poster-a
 if ($Only -eq "all" -or $Only -eq "social") { Render "poster-social" "templates/poster-social.typ" 192 "朋友圈版    2160x2880px (3:4)" }
 if ($Only -eq "all" -or $Only -eq "square") { Render "poster-square" "templates/poster-square.typ" 192 "方形封面版  2160x2160px (1:1)" }
 if ($Only -eq "all" -or $Only -eq "story") { Render "poster-story" "templates/poster-story.typ" 96 "竖屏 Story  1080x1920px (9:16)" }
+if ($Only -eq "all" -or $Only -eq "cute") { Render "poster-cute" "templates/poster-cute.typ" 192 "可爱版      2160x2880px (3:4)" }
+if ($Only -eq "all" -or $Only -eq "term") { Render "poster-term" "templates/poster-term.typ" 96 "节气版      1080x1080px (1:1)" }
+if ($Only -eq "all" -or $Only -eq "photo") { Render "poster-photo" "templates/poster-photo.typ" 96 "照片集      1080x1440px (3:4)" }
 if ($Only -eq "all" -or $Only -eq "wide") { Render "poster-wide" "templates/poster-wide.typ" 96 "横版头图    1920x1080px (16:9)" }
 if ($Only -eq "all" -or $Only -eq "banner") { Render "poster-banner" "templates/poster-banner.typ" 100 "易拉宝版    3150x7874px (80x200cm)" }
 

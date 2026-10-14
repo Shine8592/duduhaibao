@@ -21,6 +21,9 @@ FMT = {
     "social": ("templates/poster-social.typ", 96),
     "square": ("templates/poster-square.typ", 96),
     "story": ("templates/poster-story.typ", 48),
+    "cute": ("templates/poster-cute.typ", 48),
+    "term": ("templates/poster-term.typ", 48),
+    "photo": ("templates/poster-photo.typ", 48),
     "wide": ("templates/poster-wide.typ", 96),
     "banner": ("templates/poster-banner.typ", 48),
 }

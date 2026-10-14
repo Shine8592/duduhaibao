@@ -10,6 +10,11 @@
 // 所以这里给一条栈，并由 preflight.py 用 `typst fonts` 核对本机是否命中。
 #let FONTS = ("Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei")
 
+// ── 可爱方向字体栈（圆体优先；跨平台回退到黑体，不会变豆腐块）────
+// YouYuan(幼圆) / FZShuTi(舒体) 是 Windows 自带的圆润字体；其它平台回退 Noto/YaHei。
+#let FONTS_CUTE = ("YouYuan", "FZShuTi", "KaiTi",
+                   "Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei")
+
 // ── 颜色：从「风格预设」取，换一个名字全篇同步 ─────────────────
 // 用法：typst compile --input style=vivid-orange ...
 // 不传时用 styles.typ 的 DEFAULT_STYLE。名字非法会回退到默认，
@@ -126,6 +131,19 @@
   )
   v(gap, weak: false)   // 同 highlights：弱间距在大 block 里会被吞
 }
+
+// ── 圆角卡片（可爱 / 亲子方向用）───────────────────────────────
+// 圆角 + 浅底 + 内边距，一行一个卡片。
+#let card(radius: px(28), fill: TINT, inset: px(26), above: px(16), body) = block(
+  width: 100%, radius: radius, fill: fill, inset: inset, above: above, body)
+
+// ── 贴纸圆点 ──────────────────────────────────────────────────
+#let dot(size: px(14), fill: BRAND2) = circle(radius: size / 2, fill: fill)
+
+// ── 序号圆牌（可爱方向：方中带圆的小牌 + 数字）─────────────────
+#let badge(n, size: px(52), fill: BRAND, radius: px(16), num: px(28)) = block(
+  width: size, height: size, radius: radius, fill: fill,
+  align(center + horizon)[#text(fill: white, weight: "bold", size: num)[#num2(n)]])
 
 // ── 品牌带 ────────────────────────────────────────────────────
 #let brand_band(w, h, org, kicker, dx: 18mm, dy1: 12mm, dy2: 24mm,

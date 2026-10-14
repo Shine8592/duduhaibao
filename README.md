@@ -1,6 +1,6 @@
 # 海报 · duduhaibao
 
-> 一套数据，一键出 **A4 打印版 / 朋友圈版 / 方形封面版 / 竖屏 Story / 横版头图 / 易拉宝版** 六种格式的活动海报。
+> 一套数据，一键出 **A4 / 朋友圈 / 方形 / 竖屏 Story / 可爱版 / 节气版 / 照片集 / 横版头图 / 易拉宝** 九种格式。
 > 附**三层护栏**：静默排版 bug 会在编译期大声报错，而不是悄悄印错。
 
 ![预览](assets/preview-all.jpg)
@@ -20,8 +20,8 @@
 一个**中文优先**的印刷级海报生成工具包。核心不是"又一个海报模板"，而是三件事：
 
 1. **排版引擎直连** —— 用 Typst 编译成 PDF/PNG，不套 MCP、不起服务、不装 Chromium（省 170MB），
-   冷启动渲染六种格式 **约 4 秒**。
-2. **数据与版式分离** —— 出新稿只改一个 `lib/data.typ`，六种格式同步更新。
+   冷启动渲染九种格式 **约 5 秒**。
+2. **数据与版式分离** —— 出新稿只改一个 `lib/data.typ`，九种格式同步更新。
 3. **护栏体系** —— 排版类 bug 最恶心的地方是**静默**：列宽不够会把 `01` 悄悄裁成 `0`，
    内容溢出页面会被无声切掉，而编译器**一声不吭**。这个项目把它们变成大声报错。
 
@@ -56,6 +56,9 @@ python scripts/doctor.py          # 先自检依赖（装了什么、缺什么�
 | `poster-social.png` / `.pdf` | 2160×2880px（3:4）| 朋友圈、手机屏 |
 | `poster-square.png` / `.pdf` | 2160×2160px（1:1）| 公众号首图、小红书封面 |
 | `poster-story.png` / `.pdf` | 1080×1920px（9:16）| 抖音、视频号、快手、IG Story |
+| `poster-cute.png` / `.pdf` | 2160×2880px（3:4）| 幼儿园、亲子、儿童生日、兴趣班 |
+| `poster-term.png` / `.pdf` | 1080×1080px（1:1）| 节气 / 节日问候（日期自动算）|
+| `poster-photo.png` / `.pdf` | 1080×1440px（3:4）| 朋友圈游玩、旅行记录（放照片）|
 | `poster-wide.png` / `.pdf` | 1920×1080px（16:9）| 文章头图、视频封面 |
 | `poster-banner.png` / `.pdf` | 3150×7874px（80×200cm @100dpi）| 易拉宝、展架 |
 
@@ -107,6 +110,46 @@ dist/20261014/
 质量 70 的压缩版。
 
 各平台的尺寸 / 体积上限 / 注意事项见 [`references/delivery-guide.md`](references/delivery-guide.md)。
+
+---
+
+## 三个常用场景（可爱 / 节气 / 照片）
+
+### 幼儿园 · 亲子 → `poster-cute`
+
+圆角卡片 + 贴纸圆点 + 圆体（幼圆 YouYuan）的**可爱方向**。数据仍是 `lib/data.typ`，
+默认配色 `candy-pink`：
+
+```bash
+./build.sh cute                       # 糖果粉
+./build.sh cute --style macaron       # 换马卡龙 / mint / peach / sky …
+```
+
+> 这是本项目此前缺失的一半：`SKILL.md` 一直写着「卡通 vs 正式」两个方向，
+> 但示例只有正式。现在可爱方向落地了。
+
+### 节气 / 节日 → `poster-term`
+
+日期由 `scripts/solar_terms.py` **确定性计算**（太阳视黄经 → 北京时间），**刻意不问模型**：
+
+```bash
+python scripts/solar_terms.py --year 2026 2027 2028 --emit   # 生成/更新 lib/terms.typ
+# 改 lib/term.typ 里的节气名（⚠️ 别用命令行传中文，Windows 控制台编码会弄坏）
+./build.sh term            # → poster-term.png（1080×1080）
+```
+
+内置 2026–2028 共 **72 个节气**，日期可复现（2026 立冬 = 11 月 7 日、冬至 = 12 月 22 日）。
+
+### 朋友圈游玩 → `poster-photo`
+
+改 `lib/photos.typ`（地点 / 日期 / 一句话 / 照片列表），照片放 `example/photos/`：
+
+```bash
+./build.sh photo           # → poster-photo.png（1080×1440）
+```
+
+照片数量**自动适配版式**：1 张大图 / 2 张并排 / 3 张「1 大 2 小」/ 4+ 网格；
+圆角 + `cover` 裁切，保证每格比例一致、不拉伸。
 
 ---
 
@@ -169,6 +212,13 @@ python scripts/analyze_reference.py --image 参考图.jpg --out out/ref --name m
 | `graphite` | 石墨 | 工业 / 极简 / 建筑 |
 | `plum` | 梅子 | 东方 / 文化 / 艺术展 |
 | `forest` | 森林 | 自然 / 户外 / 可持续 |
+| **可爱（亲子）组** | | |
+| `candy-pink` | 糖果粉 | 幼儿园 / 儿童生日 / 亲子活动 |
+| `cream-yellow` | 奶油黄 | 儿童节 / 萌宠 / 甜品 |
+| `macaron` | 马卡龙 | 亲子 / 手工 / 兴趣班 |
+| `mint` | 薄荷 | 自然课堂 / 环保亲子 / 春游 |
+| `peach` | 蜜桃 | 生日会 / 亲子市集 / 烘焙 |
+| `sky` | 晴空 | 运动会 / 户外亲子 / 夏令营 |
 
 ```bash
 ./build.sh --style vivid-orange      # 换配色，模板一行不改
@@ -227,15 +277,19 @@ duduhaibao/
 │   ├── doctor.py             # 环境自检（只报告不安装）
 │   ├── export_pack.py        # 一键交付包：分类 + 平台友好 JPEG + 清单 + zip
 │   ├── analyze_reference.py  # 参考图 → 色板/结构/比例（带标注叠加图）
+│   ├── solar_terms.py        # 二十四节气：确定性算日期（不联网、不问模型）
 │   ├── make_preview.py       # 生成最长边 1400px 的预览 JPG
 │   ├── render_styles.py      # 同一版式 × 多套配色，横向对比
 │   ├── render_html_to_png.py # HTML → PNG/PDF（零浏览器）
 │   └── audit_public_release.sh # 公开前的泄漏扫描（发布者自查用）
 ├── example/                  # 可直接运行的完整示例
 │   ├── lib/data.typ          # ★ 唯一真源：只改这里
-│   ├── lib/styles.typ        #   命名配色方案库（--input style=…）
+│   ├── lib/styles.typ        #   命名配色方案库 24 套 / 4 组（--input style=…）
 │   ├── lib/tokens.typ        #   设计 token + 断言护栏
-│   ├── templates/            #   六种格式的版式
+│   ├── lib/terms.typ         #   二十四节气日期表（由 solar_terms.py 生成）
+│   ├── lib/term.typ          #   ★ 当前要出的节气（改这一行）
+│   ├── lib/photos.typ        #   ★ 照片集数据（地点/日期/一句话/照片列表）
+│   ├── templates/            #   九种格式的版式
 │   ├── build.sh              #   一键渲染 + 两道闸（macOS / Linux）
 │   ├── build.ps1             #   同上，Windows PowerShell 原生版
 │   └── tests/                #   回归测试

@@ -9,7 +9,8 @@
 #          ./build.sh a4           只渲染 A4
 #          ./build.sh social       只渲染朋友圈版
 #          ./build.sh square       只渲染方形封面版
-#          ./build.sh wide         只渲染横版头图
+#          ./build.sh story        只渲染竖屏 Story
+#          ./build.sh cute         只渲染可爱版（默认配色 candy-pink）
 #          ./build.sh banner       只渲染易拉宝版
 #          ./build.sh all --force  预检报错也强制渲染
 #          ./build.sh --style vivid-orange   换配色（列全部：preflight.py --list-styles）
@@ -53,6 +54,15 @@ if [ -n "$STYLE" ]; then
   STYLE_INPUT="--input style=$STYLE"
   export POSTER_STYLE="$STYLE"
 fi
+
+# 每个格式的默认配色（未显式 --style 时生效）
+default_style() {
+  case "$1" in
+    poster-cute) echo "candy-pink" ;;
+    poster-term) echo "teal" ;;
+    *)           echo "" ;;
+  esac
+}
 
 if ! command -v typst >/dev/null 2>&1; then
   echo "🔴 找不到 typst。安装见 https://typst.app"
@@ -98,8 +108,13 @@ t0=$(date +%s%N)
 
 render() {  # name  template  ppi  desc
   local n="$1" t="$2" ppi="$3" desc="$4"
-  typst compile --root . $STYLE_INPUT --format png --ppi "$ppi" "$t" "out/$n.png"
-  typst compile --root . $STYLE_INPUT "$t" "out/$n.pdf"
+  local si="$STYLE_INPUT"
+  if [ -z "$si" ]; then
+    local d; d="$(default_style "$n")"
+    [ -n "$d" ] && si="--input style=$d"
+  fi
+  typst compile --root . $si --format png --ppi "$ppi" "$t" "out/$n.png"
+  typst compile --root . $si "$t" "out/$n.pdf"
   echo "  ✅ $n  —  $desc"
 }
 
@@ -114,6 +129,15 @@ if [ "$ONLY" = "all" ] || [ "$ONLY" = "square" ]; then
 fi
 if [ "$ONLY" = "all" ] || [ "$ONLY" = "story" ]; then
   render poster-story   templates/poster-story.typ   96  "竖屏 Story  1080x1920px (9:16)"
+fi
+if [ "$ONLY" = "all" ] || [ "$ONLY" = "cute" ]; then
+  render poster-cute    templates/poster-cute.typ    192 "可爱版      2160x2880px (3:4)"
+fi
+if [ "$ONLY" = "all" ] || [ "$ONLY" = "term" ]; then
+  render poster-term    templates/poster-term.typ    96  "节气版      1080x1080px (1:1)"
+fi
+if [ "$ONLY" = "all" ] || [ "$ONLY" = "photo" ]; then
+  render poster-photo   templates/poster-photo.typ   96  "照片集      1080x1440px (3:4)"
 fi
 if [ "$ONLY" = "all" ] || [ "$ONLY" = "wide" ]; then
   render poster-wide    templates/poster-wide.typ    96  "横版头图    1920x1080px (16:9)"
