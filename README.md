@@ -113,6 +113,39 @@ dist/20261014/
 
 ---
 
+## 不知道该用哪个？一句话问它
+
+9 种版式、24 套配色，记不住很正常。直接把场景说给它：
+
+```bash
+python scripts/suggest.py "幼儿园家长会"
+python scripts/suggest.py "立冬节气海报"
+python scripts/suggest.py "周末露营的朋友圈"
+python scripts/suggest.py --list          # 看全部规则
+```
+
+输出示例：
+
+```
+场景：幼儿园家长会
+
+▎版式 → poster-cute
+  可爱 / 亲子方向：圆角卡 + 序号圆牌 + 贴纸点 + 圆体
+  命中关键词：幼儿园、家长会
+
+▎配色 → candy-pink
+  命中关键词：幼儿园
+  备选：macaron、sky、peach
+
+▎执行
+  ./build.sh cute --style candy-pink
+```
+
+这是**确定性规则表**，不是模型猜口味：命中哪些关键词、为什么推荐，全列出来；
+规则错了改一行就行。节气场景会自动识别季节并配季节色（冬→藏青/深空）。
+
+---
+
 ## 三个常用场景（可爱 / 节气 / 照片）
 
 ### 幼儿园 · 亲子 → `poster-cute`
@@ -278,6 +311,7 @@ duduhaibao/
 │   ├── export_pack.py        # 一键交付包：分类 + 平台友好 JPEG + 清单 + zip
 │   ├── analyze_reference.py  # 参考图 → 色板/结构/比例（带标注叠加图）
 │   ├── solar_terms.py        # 二十四节气：确定性算日期（不联网、不问模型）
+│   ├── suggest.py            # 场景 → 版式/配色 推荐（规则表，可解释）
 │   ├── make_preview.py       # 生成最长边 1400px 的预览 JPG
 │   ├── render_styles.py      # 同一版式 × 多套配色，横向对比
 │   ├── render_html_to_png.py # HTML → PNG/PDF（零浏览器）

@@ -4,7 +4,7 @@ description: 海报 / 邀请函 / 活动图 / 日历类视觉稿的印刷级生�
 license: MIT
 compatibility: 需要 Typst ≥ 0.13、Python 3.9+、Pillow；中文字体（Windows 自带微软雅黑 / Linux 装 fonts-noto-cjk）
 metadata:
-  version: "4.0.0"
+  version: "4.1.0"
 ---
 
 # 海报 — 中文优先的印刷级海报生成
@@ -26,7 +26,7 @@ It also covers **date-grid artifacts** — calendars, year/month series, schedul
 0. **Classify the form before styling anything.** Decide what the deliverable actually *is* — one poster, a graphic set, a date grid, a raster revision — because the form picks the route and the references; style is the *last* decision, not the first. (Borrowed from the "form before styling" discipline in a leading design skill.)
 1. **Resolve the deliverable before building.** When the user sends an image, or an image plus a block of copy, with no explicit ask, it usually maps to several plausible outputs (poster, invitation PNG, deck, or written copy only). Inspect the image with `read`, then use `question` with concrete options, recommended first. Building the wrong artifact burns the whole cycle.
 2. **Harvest the source photo for design vocabulary.** Read the subject's own signage, labels, stickers, packaging words, and decorations with `read`; that material is free, authentic vocabulary that ties the poster to the real event. Echo one or two motifs in the layout (bunting for a market, plant doodles for a gardening activity, the photo's label wording in the body copy).
-3. **Choose the page size** per target channel (table below).
+3. **Choose the page size** per target channel (table below). When the user names an *occasion* but not a format or palette (「幼儿园家长会」「立冬海报」), run `python scripts/suggest.py "<场景>"` **first** — it maps Chinese occasion words onto a template + palette and prints the matched keywords, so the choice is auditable rather than a guess. It is a rule table, not a model: when it is wrong, fix one row.
 4. **Build one HTML file per size.** Absolutely position every element at an exact CSS page size on a same-sized canvas; embed the photo as a base64 data URI so the HTML stays self-contained. Flow layout drifts and cannot be tuned precisely; absolute coordinates put each block exactly where intended.
 5. **Render.** HTML route: `scripts/render_html_to_png.py` (WeasyPrint + PyMuPDF, no browser — run it with the interpreter that has those packages, e.g. `/path/to/venv/bin/python`, and pass `--expect WxH` so a wrong page size fails loudly rather than shipping). Typst route: `typst compile --format png --ppi 300`. Pillow route: direct `save()`.
 6. **Verify the PNG with `read`** (see loop below), fix the HTML, re-render. Do not sign off by re-reading your own HTML or trusting a prior successful run.
