@@ -4,7 +4,7 @@ description: 海报 / 邀请函 / 活动图 / 日历类视觉稿的印刷级生�
 license: MIT
 compatibility: 需要 Typst ≥ 0.13、Python 3.9+、Pillow；中文字体（Windows 自带微软雅黑 / Linux 装 fonts-noto-cjk）
 metadata:
-  version: "4.1.0"
+  version: "4.2.0"
 ---
 
 # 海报 — 中文优先的印刷级海报生成
@@ -289,7 +289,7 @@ crop a region at full resolution and review that crop instead.
 
 ## Revising an existing poster
 
-When the user sends a finished poster (photo, screenshot, or scan) and asks for a wording fix, the deliverable is the *same image* with the minimum number of pixels changed — not a redesign. Full recipe in `references/raster-text-repair.md`; the shape is:
+When the user sends a finished poster (photo, screenshot, or scan) and asks for a wording fix, the deliverable is the *same image* with the minimum number of pixels changed — not a redesign. Full recipe in `references/raster-text-repair.md`; **the runnable tool is `scripts/repair_text.py`** (locate → identify font → erase → paste → diff proof). If the source file exists, edit the source instead — the bitmap path always leaves antialiasing differences. The shape is:
 
 1. Establish the true text before touching anything (verify every suspected error — see pitfalls).
 2. Locate exact glyph bounding boxes programmatically (column segmentation on the ink mask), not by eye.

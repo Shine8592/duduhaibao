@@ -2,6 +2,42 @@
 
 For editing words in an existing poster, scan, or photo the user sends back (a typo fix on a delivered graphic). Do not rebuild the design. Change the fewest possible pixels.
 
+## Tool: `scripts/repair_text.py`
+
+The six steps below are now a script — no need to reassemble the snippets each time:
+
+```bash
+# 1) locate glyph boxes (projection; prints candidates + width warnings for you to check)
+python scripts/repair_text.py --image p.png --find-in 1100,850,1500,950
+# 2) identify the font (score candidate fonts on a known-clean glyph; advisory only)
+python scripts/repair_text.py --image p.png --font-rank \
+    --sample-box 1130,860,1210,940 --sample-char 路
+# 3) replace (the box is auto-tightened to the real ink; writes a diff report + diff image)
+python scripts/repair_text.py --image p.png --box 1130,860,1210,940 \
+    --replace 安 --font 微软雅黑 --out fixed.png --report-json r.json
+```
+
+Outputs `fixed.png` + `fixed-diff.png` (difference ×8) + a report whose key number is
+**changed pixels outside the box — it must be 0.**
+
+### Measured behaviour and honest limits
+
+Round-trip test (render a wrong-char image + a correct one, repair the first, pixel-compare):
+
+- **changed pixels outside the box = 0** ✅ — the proof mechanism is reliable.
+- The repaired glyph still differs from the true glyph by ~**0.45 % of the image**, concentrated
+  on **stroke edges** (re-rasterisation antialiasing) plus a faint ghost of the old character.
+  → Visible up close. **If you can get the source file, always edit the source, never the bitmap.**
+- `--find-in` segmentation is **not perfect**: a CJK glyph's internal stroke gaps (~3 px) are
+  close to the between-glyph gaps (~5 px), so no clean threshold exists. It therefore only
+  *reports candidates and flags wide/narrow ones* for a human to pick.
+- `--font-rank`'s IoU/NCC signal is weakened by the box normalisation — **advisory only**;
+  render the top candidates side by side and look.
+
+Dependencies: `opencv-python` + `numpy` + `Pillow`. `tesseract` is **optional** (auto-reading
+the wrong character); without it the workflow degrades to projection + a human-supplied
+replacement character.
+
 ## Dependencies
 
 ```bash

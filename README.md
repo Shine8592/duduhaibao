@@ -312,6 +312,7 @@ duduhaibao/
 │   ├── analyze_reference.py  # 参考图 → 色板/结构/比例（带标注叠加图）
 │   ├── solar_terms.py        # 二十四节气：确定性算日期（不联网、不问模型）
 │   ├── suggest.py            # 场景 → 版式/配色 推荐（规则表，可解释）
+│   ├── repair_text.py        # 成品图改字：定位→认字体→擦除→贴回→差分举证
 │   ├── make_preview.py       # 生成最长边 1400px 的预览 JPG
 │   ├── render_styles.py      # 同一版式 × 多套配色，横向对比
 │   ├── render_html_to_png.py # HTML → PNG/PDF（零浏览器）
