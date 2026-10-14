@@ -6,6 +6,11 @@ example/out/
 # 例外：源码型 PNG（示例二维码）要提交
 !example/qr-demo.png
 
+# ── 交付包产物（跑 export_pack.py 会重新生成）──
+example/dist/
+dist/
+*.zip
+
 # ── Python ──
 __pycache__/
 *.py[cod]

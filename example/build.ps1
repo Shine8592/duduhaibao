@@ -14,6 +14,7 @@
 #          .\build.ps1 all -Force   预检报错也强制渲染
 #          .\build.ps1 -Style vivid-orange   换配色（列全部：preflight.py --list-styles）
 #          .\build.ps1 -Styles               同一版式横向对比全部配色
+#          .\build.ps1 -Pack                 渲染后再打一个交付包 dist/
 #
 #  依赖：  typst >= 0.13           https://typst.app
 #          python + pillow         pip install pillow
@@ -27,7 +28,8 @@ param(
   [Parameter(Position = 0)][string]$Only = "all",
   [switch]$Force,
   [string]$Style = "",
-  [switch]$Styles
+  [switch]$Styles,
+  [switch]$Pack
 )
 
 $ErrorActionPreference = "Stop"
@@ -121,5 +123,10 @@ Write-Host "════════ 完成，用时 $elapsed ms ═════
 if ($PostRC -ne 0) {
   Write-Host "🔴 后检未通过：成品有问题，别发印"
   exit 1
+}
+
+# ── 一键交付包（-Pack）：分类 + 平台友好 JPEG + 清单 + zip ──
+if ($Pack) {
+  & $Python (Join-Path $Here "..\scripts\export_pack.py") --root $Here
 }
 exit 0

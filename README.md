@@ -41,9 +41,10 @@ cd duduhaibao/example
 #   Windows: winget install Typst.Typst   （或下载 typst.exe 放进 PATH）
 
 python scripts/doctor.py          # 先自检依赖（装了什么、缺什么；只报告不安装）
-./build.sh              # 五种格式一起出（含预检 + 后检）  ← macOS / Linux
+./build.sh              # 六种格式一起出（含预检 + 后检）  ← macOS / Linux
 .\build.ps1             # 同上，Windows PowerShell 原生版
-./build.sh --style vivid-orange   # 换配色（6 套内置，见「风格预设」）
+./build.sh --pack       # 再打一个「交付包」dist/（分类 + 平台友好 JPEG + 清单 + zip）
+./build.sh --style vivid-orange   # 换配色（18 套内置，见「风格预设」）
 ./build.sh --styles               # 同一版式横向对比全部配色，并拼成带标注的联系表
 ```
 
@@ -77,7 +78,35 @@ python scripts/doctor.py          # 先自检依赖（装了什么、缺什么�
 )
 ```
 
-然后 `./build.sh`（Windows：`.\build.ps1`）。**换品牌色**：改 `lib/tokens.typ` 里的 `BRAND` 一个值，四种格式同步跟随。
+然后 `./build.sh`（Windows：`.\build.ps1`）。**换品牌色**：改 `lib/tokens.typ` 里的 `BRAND` 一个值，六种格式同步跟随。
+
+---
+
+## 一键交付包
+
+渲染出图只是半成品。投到不同平台还要**对的格式、对的体积、对的清单**——这些是确定性工作，交给脚本：
+
+```bash
+./build.sh --pack          # 或 .\build.ps1 -Pack
+```
+
+产出 `dist/<日期>/`：
+
+```
+dist/20261014/
+├── print/    A4、易拉宝（PDF 矢量 + PNG）      ← 印刷用
+├── social/   朋友圈 / 方形 / 竖屏 / 横版（PNG）
+├── web/      全格式的平台友好 JPEG（RGB，≤2048 长边；超限另出 .compressed.jpg）
+├── manifest.json   每文件的尺寸 / 字节 / sha256 / 用途 / 建议投放
+├── README.txt      人读的交付清单
+└── duduhaibao-<日期>.zip
+```
+
+**为什么 JPG 而不是直接用 PNG**：微信公众号 / 小红书 / 抖音都会对上传的 PNG 二次压缩，
+先转成 RGB JPEG（质量 88）更稳。体积**超过平台上限**时脚本会预警，并自动再出一张
+质量 70 的压缩版。
+
+各平台的尺寸 / 体积上限 / 注意事项见 [`references/delivery-guide.md`](references/delivery-guide.md)。
 
 ---
 
@@ -169,10 +198,12 @@ duduhaibao/
 │   ├── raster-text-repair.md #    改已有成品图上的错字（不重排）
 │   ├── publishing-publicly.md#    把客户定制模板开源出去的去标识化流程
 │   ├── qa-rubric.md          #    交付质检清单（机器可验 + 人眼判断）
-│   └── platform-specs.md     #    各平台画幅/像素/UI 遮挡安全区
+│   ├── platform-specs.md     #    各平台画幅/像素/UI 遮挡安全区
+│   └── delivery-guide.md     #    投放规格：格式/体积上限/常见坑
 ├── scripts/
 │   ├── preflight.py          # 预检：数据+字体+风格+对比度 / 成品
 │   ├── doctor.py             # 环境自检（只报告不安装）
+│   ├── export_pack.py        # 一键交付包：分类 + 平台友好 JPEG + 清单 + zip
 │   ├── make_preview.py       # 生成最长边 1400px 的预览 JPG
 │   ├── render_styles.py      # 同一版式 × 多套配色，横向对比
 │   ├── render_html_to_png.py # HTML → PNG/PDF（零浏览器）

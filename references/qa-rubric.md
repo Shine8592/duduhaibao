@@ -13,6 +13,7 @@ cd example
 python tests/run_tests.py        # 断言/溢出/防误报
 ./build.sh                       # 渲染 + 预检双闸（数据 + 成品）
 python tests/check_qr.py         # 二维码可扫性
+./build.sh --pack                # 交付包（含体积预警）
 ```
 
 - [ ] 🔒 **尺寸正确**：每种格式的产物像素尺寸 == 声明值（`preflight.py` FORMATS）
@@ -25,6 +26,7 @@ python tests/check_qr.py         # 二维码可扫性
 - [ ] 🔒 **风格合法**：`--input style=` 的名字在 `lib/styles.typ` 中存在
 - [ ] 🔒 **对比度达标**：逐套配色算 WCAG（正文/小字 ≥ 4.5，大字 ≥ 3.0）——`preflight.py` 已做成闸门
 - [ ] 🔒 **环境自检**：`python scripts/doctor.py` 必需项齐全
+- [ ] 🔒 **体积不超平台上限**：`--pack` 会对超限文件预警并出压缩版（见 `delivery-guide.md`）
 
 ## 二、人眼判断（👁 不能自动化的部分）
 

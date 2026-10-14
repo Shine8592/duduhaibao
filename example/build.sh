@@ -14,6 +14,7 @@
 #          ./build.sh all --force  预检报错也强制渲染
 #          ./build.sh --style vivid-orange   换配色（列全部：preflight.py --list-styles）
 #          ./build.sh --styles               同一版式横向对比全部配色
+#          ./build.sh --pack                 渲染后再打一个交付包 dist/
 #
 #  依赖：  typst >= 0.13           https://typst.app
 #          python3 + pillow        pip install pillow
@@ -29,13 +30,14 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 cd "$HERE"
 mkdir -p out
 
-ONLY="all"; FORCE=""; STYLE=""; STYLES_CMP=0
+ONLY="all"; FORCE=""; STYLE=""; STYLES_CMP=0; PACK=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --force)   FORCE="--force" ;;
     --style)   STYLE="${2:-}"; shift ;;
     --style=*) STYLE="${1#*=}" ;;
     --styles)  STYLES_CMP=1 ;;
+    --pack)    PACK=1 ;;
     -*)        echo "未知参数：$1"; exit 2 ;;
     *)         ONLY="$1" ;;
   esac
@@ -139,5 +141,10 @@ echo "════════ 完成，用时 $(( (t1 - t0) / 1000000 )) ms ═
 if [ $POST -ne 0 ]; then
   echo "🔴 后检未通过：成品有问题，别发印"
   exit 1
+fi
+
+# ── 一键交付包（--pack）：分类 + 平台友好 JPEG + 清单 + zip ──
+if [ "$PACK" = "1" ]; then
+  "$PYTHON" "$HERE/../scripts/export_pack.py" --root "$HERE"
 fi
 exit 0
