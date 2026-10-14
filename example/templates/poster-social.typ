@@ -22,20 +22,18 @@
 #place(top + left, dx: M, dy: px(128),
   text(fill: BRAND2, size: px(30), tracking: 0.25em)[#salon.kicker])
 
-// ── 主标题（字号大，两行）──
+// ── 主标题 + 强调线 + 导语（同一个块内流式排布）──
+// ⚠️ 三者必须放同一个 place 块：强调线要随标题**实际行数**走。之前是三个独立
+//    place、强调线用硬编码 dy；标题一旦 2 行，线就落到第二行字底上（看着像给
+//    首字加下划线）—— 静默版式 bug，尺寸/溢出护栏抓不到。
 #place(top + left, dx: M, dy: px(238), block(width: CW)[
   #set par(leading: 1.34em, spacing: 0pt)
   #text(size: px(76), weight: "bold", fill: BRAND)[#salon.title]
-])
-
-// ── 强调线 ──
-#place(top + left, dx: M, dy: px(436), rect(width: px(108), height: px(6), fill: BRAND))
-
-// ── 导语（短版）──
-#place(top + left, dx: M, dy: px(472), block(width: CW - px(20))[
-  #set text(size: px(33), fill: MUTED)
+  #v(px(16))
+  #block(width: px(108), height: px(6), fill: BRAND)
+  #v(px(12))
   #set par(leading: 1.75em)
-  #salon.lead_short
+  #text(size: px(33), fill: MUTED)[#salon.lead_short]
 ])
 
 // ── 亮点 ──

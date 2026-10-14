@@ -24,20 +24,15 @@
 #place(top + left, dx: M, dy: px(104),
   text(fill: BRAND2, size: px(24), tracking: 0.25em)[#salon.kicker])
 
-// ── 左列：主标题 ──
+// ── 左列：主标题 + 强调线 + 导语（同一个块内流式排布，见 social 注释）──
 #place(top + left, dx: M, dy: px(210), block(width: LW)[
   #set par(leading: 1.3em, spacing: 0pt)
   #text(size: px(66), weight: "bold", fill: BRAND)[#salon.title]
-])
-
-// ── 强调线 ──
-#place(top + left, dx: M, dy: px(400), rect(width: px(96), height: px(6), fill: BRAND))
-
-// ── 左列：导语（短版）──
-#place(top + left, dx: M, dy: px(432), block(width: LW - px(20))[
-  #set text(size: px(30), fill: MUTED)
+  #v(px(18))
+  #block(width: px(96), height: px(6), fill: BRAND)
+  #v(px(24))
   #set par(leading: 1.7em)
-  #salon.lead_short
+  #text(size: px(30), fill: MUTED)[#salon.lead_short]
 ])
 
 // ── 左列：亮点 ──
