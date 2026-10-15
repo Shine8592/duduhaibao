@@ -292,6 +292,7 @@ duduhaibao/
 ├── SKILL.md                  # 技能定义（可放进 opencode / Hermes 的 skills/ 目录）
 ├── competitive-analysis.md   # 同类项目对比与借鉴记录
 ├── CHANGELOG.md              # 版本变更
+├── releases-backup.json      # Release 备份（git 不含 Release，删库重建会丢）
 ├── references/               # 分路线深度参考
 │   ├── typst-route.md        #    Typst 手册 + 完整踩坑清单
 │   ├── pillow-page-layout.md #    Pillow A4 几何 / 圆角 / 投影 / 比例裁切
@@ -313,6 +314,7 @@ duduhaibao/
 │   ├── solar_terms.py        # 二十四节气：确定性算日期（不联网、不问模型）
 │   ├── suggest.py            # 场景 → 版式/配色 推荐（规则表，可解释）
 │   ├── repair_text.py        # 成品图改字：定位→认字体→擦除→贴回→差分举证
+│   ├── backup_releases.py    # Releases 备份/还原（git 不含 Release，须单独备份）
 │   ├── make_preview.py       # 生成最长边 1400px 的预览 JPG
 │   ├── render_styles.py      # 同一版式 × 多套配色，横向对比
 │   ├── render_html_to_png.py # HTML → PNG/PDF（零浏览器）

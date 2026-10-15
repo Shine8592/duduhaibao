@@ -1,0 +1,84 @@
+{
+  "_note": "Release 备份：git 里没有 Release 页，删库重建会丢，故单独备份。",
+  "_repo": "Shine8592/duduhaibao",
+  "_exported": "2026-10-15T12:55:54",
+  "releases": [
+    {
+      "tag": "v4.3.0",
+      "name": "duduhaibao v4.3.0 — 栅格修订工具箱（repair_raster.py）",
+      "body": "> 主题：**把栅格修订从「每次现场重写」变成「一条命令」** —— 起因是稻田海报改版连踩 3 个同源坑\n> （采样点选在「看起来像背景、其实不是」的地方），每次靠肉眼发现、每次花好几轮来回。\n> 流程文档写得再全，手写脚本时仍会一条条重新踩。\n\n### 新增\n- **`scripts/repair_raster.py` 成品图修订工具箱**，5 个子命令对应\n  `references/raster-text-repair.md` 的六步流程：\n  - `probe` —— 墨迹行投影 → 条带表（y0/y1/中心/高度/节距/每条带文字最右 x）+ X_SPLIT 建议\n  - `bg` —— 卡片内部底色剖面 + 采样窗自检（采到边框高光或插画直接告警）\n  - `erase` —— 用逐行剖面清空矩形（诚实的填充）\n  - `rules` —— **逐行**找结构线（分隔线/横线）+ 结构线/JPEG 振铃判定 + 节距\n  - `bands` —— 块级编辑：搬移/删除条带、还原插画列、回叠墨迹；`--count` 可自动在首末中心间均分\n  - `verify` —— 证明改动 + 证明克制（改动像素 / 目标区外像素 / 填充区色准）\n\n### 设计\n- **每个坑都是一条硬守卫**，不靠使用者记得：单一 `lum()` 助手消灭 row/block 的\n  `mean(axis=)` 混淆；底色只采卡内并同时拒绝文字与插画；逐行剖面 + 插值 + 平滑\n  （拒绝固定条带、拒绝平铺）；「还原插画列」与「回叠墨迹」强制为两遍独立 pass；\n  回叠只对「文字确实越过分界」的条带生效（用分界左侧墨迹计数判定，不靠肉眼）；\n  遮罩逐像素判明暗（源更深才覆盖）；校验行只取最终图干净行。\n- **工具层只管几何、搬移和取证，不知道你要写什么字。** 新日期 / 新行文字的绘制仍归\n  本次任务的脚本 —— 与 SKILL.md「工具层不是知识所在」一致。\n\n### 验证\n用一次真实修订做端到端回归：从改版前的 `_s2.png` 重跑亮点删行，输出与人工三脚本流水线\n的成品**逐像素一致**（完全相同 2,138,904 px；差 >30 的 0 px；最大差 8 级）。\n三条带文字列墨迹缺口 **0 / 0 / 0**，插画列误伤与手工版同为 91 px（那是刻意搬过去的「验」字笔画）。\n\n### 更正（重要）\n- **删除了一条错误教训。** 原文档写着「流程卡*看起来*有行分隔线，可能只是平滑渐变；五条自造的\n  规则线在用户眼里就是『底纹有点乱』」。这个结论**基于一次步长为 5 的扫描** —— 而卡片的行分隔线\n  是 **1px 发丝线，只有 7~25 级深**，步长 5 会逐条跳过。\n  逐行重扫后真相是：**原卡确实有 9 条行分隔线**（y1101~1501，节距 50，正是 10 行表格的 9 条线），\n  在**无文字的空白列**上同样深 13~25 级（排除 JPEG 振铃）。\n  我当时自造的那 5 条线真正的问题不是「不该有」，而是**节距错了（100 而非 50）** —— 线落在行中间，\n  才读成脏。新教训已写入 `references/raster-text-repair.md`：\n  ① 「原图没有 X」这类结论必须声明扫描步长，并换窄窗全分辨率复核；\n  ② 用「无文字处是否同样深」区分结构线与振铃；\n  ③ 填充会连分隔线一起抹掉 —— 要么按新行距与实测权重重画，要么明说这块现在无线。\n\n### 文档\n- SKILL.md「Revising an existing poster」增加工具调用序列。\n- `references/raster-text-repair.md` 块级编辑章节加工具指引 + 两条新坑：\n  ① 条带必须从卡片**虚线边框内侧**投影（边框会让整列有墨、条带粘连成一块，节距丢失）；\n  ② 条带搬移的墨迹缺口只能量**文字列**，把插画列算进去会对每次正确编辑都报假警。\n\n---\n_说明：仓库重建导致原 Release 页丢失；正文取自仓库 `CHANGELOG.md`（原手写 Release 说明已不可靠恢复），标题保留了原始 Release 名。_\n",
+      "prerelease": false,
+      "published_at": "2026-10-14T06:26:03Z"
+    },
+    {
+      "tag": "v4.2.0",
+      "name": "duduhaibao v4.2.0 — 成品图改字工具",
+      "body": "## 成品图改字工具\n\n此前 `references/raster-text-repair.md` 只有方法（含代码片段），每次用都得\"读文档 + 临场拼 Python\"。\n这轮先做竞品调研，再把它固化成**可执行脚本**。\n\n### 新增 `scripts/repair_text.py`\n\n```bash\n# 1) 找框（投影，报候选 + 宽窄提示）\npython scripts/repair_text.py --image p.png --find-in 1100,850,1500,950\n# 2) 认字体（IoU + NCC 打分，仅供参考）\npython scripts/repair_text.py --image p.png --font-rank --sample-box 1130,860,1210,940 --sample-char 路\n# 3) 改字（框自动收紧到真实墨迹 → 擦除 → 贴回 → 差分举证）\npython scripts/repair_text.py --image p.png --box 1130,860,1210,940 \\\\\n    --replace 安 --font 微软雅黑 --out fixed.png --report-json r.json\n```\n\n- **框自动收紧到真实墨迹**（调用方给的框常常偏大或是行高框，不收紧会把字拉伸变形）\n- 只擦目标字：`cv2.inpaint` TELEA + 小核；墨色从原图自身暗像素取样\n- **硬指标：框外改动像素必须为 0** —— 这是\"只改了该改的\"的证明\n- `tesseract` 可选；没有它也能用（投影找框 + 人工给正确字）\n\n### 为什么自己做（竞品调研）\n\n| 方案 | ★ | 为什么不适用 |\n|---|---|---|\n| IOPaint / inpaint-web / ComfyUI-MCP | 23.3k / 6.1k / 820 | 靠扩散模型重绘：要下模型、要 GPU/API，结果不确定 |\n| detextify | 308 | 同上，且目标是**抹掉** AI 图的乱字，不是换成正确的字 |\n| Photoshop / Photopea / darktable MCP | 309 / 43 / 23 | 需要**外部应用** |\n| photo-retouch-pro 等技能 | ≤11 | 做的是**审美修图**，不是精确改字 |\n\n**没有任何现成工具能给出「框外改动 = 0」这个保证。** 借鉴了 detextify 的「检测器 / 修复器分离」\n与 photo-retouch-pro 的「Quality Gate」思路。\n\n### 实测与老实交代（往返测试）\n\n- **框外改动 = 0** ✅\n- 修复字与正确字残余差异 ≈ 全图 **0.45%**，集中在**笔画边缘**（重渲染抗锯齿）+ 极淡旧字残影。\n  → **能拿到源文件就永远改源，别改位图。**\n- `--find-in` 切分**不完美**：汉字内部笔画间隙（~3px）与字间间隙（~5px）太接近，没有干净阈值\n  → 所以只报候选框 + 标\"偏宽/偏窄\"，由人拍板。\n- `--font-rank` 正确把 `msyh` 排在第一，但归一化削弱了信号 → 标注\"仅供参考，需并排目视确认\"。\n",
+      "prerelease": false,
+      "published_at": "2026-10-14T06:26:02Z"
+    },
+    {
+      "tag": "v4.1.0",
+      "name": "duduhaibao v4.1.0 — 场景推荐：说人话就能选对",
+      "body": "## 场景推荐\n\n9 种版式、24 套配色，记不住很正常。直接把场景说给它：\n\n```bash\npython scripts/suggest.py \"幼儿园家长会\"\npython scripts/suggest.py \"立冬节气海报\"\npython scripts/suggest.py --list\n```\n\n输出示例：\n\n```\n场景：幼儿园家长会\n\n▎版式 → poster-cute\n  可爱 / 亲子方向：圆角卡 + 序号圆牌 + 贴纸点 + 圆体\n  命中关键词：幼儿园、家长会\n\n▎配色 → candy-pink\n  命中关键词：幼儿园\n  备选：macaron、sky、peach\n\n▎执行\n  ./build.sh cute --style candy-pink\n```\n\n### 设计取舍\n\n这是**确定性规则表，不是模型猜口味**：命中了哪些关键词、为什么推荐，全部列出来；\n规则错了改一行即可（`--list` 看全表，`--json` 供程序用）。节气 / 节日场景会\n**自动识别季节**并配季节色（春→薄荷/森林，夏→青碧/晴空，秋→暖沙/鎏金，冬→雾蓝/藏青），\n复用 `solar_terms.py` 的 `TERM_INFO` 作唯一真源。\n\n### 验证（6 个典型场景实测）\n\n| 场景 | 推荐 |\n|---|---|\n| 幼儿园家长会 | `poster-cute` + `candy-pink` |\n| 立冬节气海报 | `poster-term` + `mist-blue`（冬）|\n| 周末露营的朋友圈 | `poster-social` + `forest`（备选 `poster-photo`）|\n| 公司产品发布会 | `poster-a4` + `tech-cyan` |\n| 学术讲座 | `poster-a4` + `ink-green` |\n| 抖音探店视频封面 | `poster-story` + `tech-cyan` |\n",
+      "prerelease": false,
+      "published_at": "2026-10-14T06:26:01Z"
+    },
+    {
+      "tag": "v4.0.0",
+      "name": "duduhaibao v4.0.0 — 可爱方向 + 节气数据 + 照片格位",
+      "body": "## 补齐「可爱」方向 + 节气数据 + 照片格位\n\n起因：回到真实场景（邀请函 / 节气 / 朋友圈游玩 / 幼儿园）后发现，文档里一直写着\n「卡通 vs 正式」两个方向，**示例却只有正式** —— 而三个真实需求都偏可爱。\n\n### 新增\n\n- **可爱 / 亲子方向** `poster-cute`（3:4）：圆角卡片 + 序号圆牌 + 贴纸圆点 +\n  圆体（幼圆 YouYuan）；新增 `FONTS_CUTE` 字体栈（跨平台回退黑体，不会变豆腐块）。\n- **风格库 18 → 24 套 / 4 组**（正式 / 文艺 / 活力 / **可爱**）：新增 糖果粉 / 奶油黄 /\n  马卡龙 / 薄荷 / 蜜桃 / 晴空，全部经对比度闸门自动校准。\n- **节气数据引擎** `scripts/solar_terms.py`：按太阳视黄经（Meeus 低精度）**确定性计算**\n  24 节气日期（北京时间），**刻意不问模型**。配套 `lib/terms.typ`（2026–2028 共 72 条）+\n  `lib/term.typ`（当前节气）+ 模板 `poster-term`（1:1）。\n- **照片集模板** `poster-photo`（3:4）：`lib/photos.typ` 驱动，照片数量**自动适配版式**\n  （1 大图 / 2 并排 / 3「1 大 2 小」/ 4+ 网格），圆角 + `cover` 裁切不拉伸。\n- 每个格式支持**默认配色**（cute→candy-pink、term→teal），`--style` 可覆盖。\n\n### 修复 / 加固\n\n- **字体闸门**从只查 `FONTS` 改为查**全部 `FONTS*` 字体栈**。\n- **底部净空检查改为「与页面底色一致」**：原来写死\"必须纯白\"，对整页浅色底的版式\n  （节气版用 TINT）会误报；现取**底部两角众数**为底色再比对\n  （⚠️ 不能取四角：顶部通栏品牌带会让顶部两角是品牌色，与底部白角打平选错）。\n- 记录两个 Typst 坑：① `.at(0, default: panic(...))` —— `default` **急切求值**，\n  守卫自己变炸弹；② `image()` 相对路径是相对**调用文件**，`--root .` 下需前导斜杠。\n\n### 验证\n\n**9 种格式**渲染 + 后检全过；回归 4/4；二维码 7/7；对比度 24×5 全达标；\n可爱版 / 节气版 / 照片集均经目视验收；节气日期自检通过（2026 立冬 = 11/7、冬至 = 12/22）。\n",
+      "prerelease": false,
+      "published_at": "2026-10-14T06:26:00Z"
+    },
+    {
+      "tag": "v3.2.0",
+      "name": "duduhaibao v3.2.0 — 参考图 → 确定性复刻",
+      "body": "## 参考图 → 确定性复刻\n\n把竞品 **poster-style-transfer** 的「**Extract poster grammar, not poster content**」，\n做成**可测量、可核验**的版本。\n\n竞品靠模型「看图写一段提示词」；本仓用脚本**量化 + 结构分析**，给结果并**画出来给人核对**。\n\n### 新增\n\n- **`scripts/analyze_reference.py`**：输入一张参考图，输出\n  - `*-analysis.png` —— **带标注的结构叠加图**（横带红框 + 竖栏蓝线 + 色卡），先目视核验检测对不对；\n  - `*-report.md` —— 比例 / 建议格式 / 色板表（含 WCAG 对比度）/ 横带竖栏结构表；\n  - `*-palette.typ` —— 可直接粘进 `lib/styles.typ` 的配色片段（对比度闸门会自动校验）。\n- **`references/reference-extraction.md`**：完整工作流 + 诚实边界。\n\n### 往返测试（自我验证）\n\n拿本仓自己的 `poster-social.png` 当参考图跑一遍：\n\n- 比例 **0.750 → 建议 `poster-social`**（正确）；\n- `brand` **精确还原 `#1B4F8C`**（本仓品牌色）；\n- 横带检测把 **标题两行 / 强调线 / 导语两行 / 亮点三条 / 信息两行 / 报名区（并分出竖栏）/ 页脚**\n  全部正确圈出 —— 叠加图已目视验收。\n\n### 诚实边界\n\n色板是**启发式推断**：量化会合并**小面积色**（点缀色、灰字），所以 `tint`/`muted` 常不准，\n报告里标注「务必人工校订」，拿到片段后跑 `preflight.py` 由对比度闸门校验。\n只借**语法**不抄**内容**；肖像 / logo / 商标 / 独特插画必须替换。\n",
+      "prerelease": false,
+      "published_at": "2026-10-14T06:25:59Z"
+    },
+    {
+      "tag": "v3.1.0",
+      "name": "duduhaibao v3.1.0 — 一键导出/投递",
+      "body": "## 一键导出 / 投递\n\n补齐竞品（html-anything 的 9 平台导出）明显强于我们的一块。渲染出图只是半成品——\n投到不同平台还要**对的格式、对的体积、对的清单**，这些是确定性工作，交给脚本。\n\n### 新增\n\n- **`scripts/export_pack.py` 一键交付包**（`./build.sh --pack` / `.\\\\build.ps1 -Pack`）：\n  ```\n  dist/<日期>/\n  ├── print/    A4、易拉宝（PDF 矢量 + PNG）      ← 印刷用\n  ├── social/   朋友圈 / 方形 / 竖屏 / 横版（PNG）\n  ├── web/      全格式平台友好 JPEG（RGB，≤2048 长边；超限另出 .compressed.jpg）\n  ├── manifest.json   尺寸 / 字节 / sha256 / 用途 / 建议投放\n  ├── README.txt      人读的交付清单\n  └── duduhaibao-<日期>.zip\n  ```\n  **体积预警 + 自动压缩版**：超过平台单张上限时报警，并另出一张质量 70 的压缩版。\n- **`references/delivery-guide.md`**：各平台投放规格（格式 / 尺寸 / 体积上限 / 二次压缩 / 常见坑）。\n\n### 为什么先转 JPEG\n\n微信公众号 / 小红书 / 抖音会对上传的 PNG 二次压缩；先给 RGB JPEG（质量 88）更稳。\n上表与清单里的字节数可直接与平台上限核对。\n\n### 变更\n\n- `build.sh` / `build.ps1` 新增 `--pack` / `-Pack`（一键：渲染 → 预检双闸 → 交付包）。\n- `.gitignore` 排除 `dist/`、`*.zip`（产物不入库）。\n\n### 验证\n\n6 种格式渲染 + 后检全过；交付包 6 项全部核验（尺寸正确 / 非空白 / 体积正常）；\n回归测试 4/4；二维码 6/6。\n",
+      "prerelease": false,
+      "published_at": "2026-10-14T06:25:58Z"
+    },
+    {
+      "tag": "v3.0.0",
+      "name": "duduhaibao v3.0.0 — 18 套风格 + 联系表 + 竖屏 Story + 目视修复",
+      "body": "## 目视质检 → 达到竞品 → 超越竞品\n\n本轮起工具具备读图能力，**所有版式改动都经目视验收**（像素扫描 + 放大裁剪 + 联系表）。\n\n### 新增\n\n- **风格库 6 → 18 套**：新增 藏青金 / 青碧 / 樱粉 / 薰衣草 / 雾霾蓝 / 暖沙 / 科技青 /\n  深空 / 鎏金 / 石墨 / 梅子 / 森林。全部经**对比度闸门自动校准**到达标（18 套 × 5 条规则）。\n- **`--styles` 升级为「联系表」**：一次生成带标注的 `out/styles-sheet.jpg`，18 套配色并排看，\n  对齐 html-anything 的多候选预览，比竞品更直观。\n- **新增格式：竖屏 Story（9:16，1080×1920）** —— 抖音 / 视频号 / 快手 / IG Story。\n  并把**平台安全区编码成硬闸门**：底部净空 288px（=1920×15%），任何落进平台遮挡区的\n  内容都会被 preflight 拦下。**格式从 5 种增至 6 种。**\n- **间距阶梯 `SP` + `min_gap()` 断言**：纵向节奏统一从阶梯取值，间距过小在编译期报错。\n\n### 修复（目视体检发现）\n\n- **social / square / wide 纵向节奏失衡**：强调线被夹在标题与导语之间、导语贴住亮点列表、\n  列表项间距被吞。\n- **square**：亮点列表与信息贴死（间距仅 4px）。\n- **两个 Typst 静默坑**（已写进模板注释，供后来者避雷）：\n  1. `v()` 默认是**弱间距**，放进大 block 会被吞掉 → 列表项间距凭空消失；需 `weak: false`。\n  2. 在大 block 里设 `par(leading)` 会**压扁**嵌套 grid 的行高；而 grid 单元格是单行、\n     行高由**字体度量**决定，页面级/块级 leading 都改不动它 → 故列表与信息必须独立成块。\n\n### 验证\n\n6 种格式渲染 + 后检全过；回归测试 4/4；二维码 6/6；对比度 18×5 全达标；全部版式目视验收。\n",
+      "prerelease": false,
+      "published_at": "2026-10-14T06:25:57Z"
+    },
+    {
+      "tag": "v2.2.0",
+      "name": "duduhaibao v2.2.0 — 对比度闸门 + 平台规格 + 环境自检",
+      "body": "## 第二轮竞品对标后的升级\n\n审了 8 个新竞品（html-anything 9103★ / gbro-cover-design 896★ / web-asset-generator 518★ /\nguizang-yingzao-skill 500★ 等），完整分析与借鉴记录见 [`competitive-analysis.md`](competitive-analysis.md) 的「第二轮补扫」。\n\n### 新增\n\n- **对比度闸门**：`preflight.py` 逐套配色计算 WCAG 对比度（正文/小字 ≥ 4.5、大字 ≥ 3.0），\n  不达标即报错。借鉴 huashu-design / html-anything 的「对比度 ≥ 4.5」硬约束 —— 但把它从\n  **提示词纪律**变成**可执行检查**。启用后**当场查出并修好**两套配色的 muted 偏淡：\n  `formal-blue` 4.26 → 4.65、`vivid-orange` 4.45 → 4.66（前者是默认配色，即所有成品的小字）。\n- **`references/platform-specs.md`**：各平台画幅/像素尺寸 + **UI 遮挡安全区**\n  （抖音/视频号底部 ~15%、小红书底部 ~12%、易拉宝底部 ~30cm、印刷出血/安全线）。\n- **`scripts/doctor.py`**：环境自检（Python / Typst / Pillow / 中文字体 / 二维码后端 / HTML 路线），\n  **只报告、不静默安装**。\n\n### 变更\n\n- `SKILL.md` 新增「**程序做测量，模型做语义**」原则小节，并明确「**只读图一次、不自动重生成，\n  把决定交回用户**」。\n- README 补 opencode / Claude Code / Codex / Hermes 四种安装路径。\n\n### 验证\n\n5 格式渲染 + 后检全过；回归 4/4；二维码 5/5；对比度 6 套配色 × 5 条规则全达标；doctor 必需项齐全。\n",
+      "prerelease": false,
+      "published_at": "2026-10-14T06:25:56Z"
+    },
+    {
+      "tag": "v2.1.1",
+      "name": "duduhaibao v2.1.1 — 修复强调线压到 2 行标题字底",
+      "body": "## 修复：强调线压到 2 行标题字底（静默版式 bug）\n\n`poster-social` / `poster-square` / `poster-wide` 的强调线位置原本是硬编码 `dy`，隐含假设\n标题只有 1 行；示例数据是 **2 行标题**，线就落到第二行字底上，看着像给首字加了下划线。\n这类 bug **不裁切、不溢出、编译器不报错**，现有尺寸/溢出护栏也抓不到。\n\n改为把「标题 + 强调线 + 导语」放进同一个 `place` 块内 **流式排布**（间距由 `#v()` 保证），\n与标题实际行数解耦；外层仍是绝对定位，不违背项目的锚定原则。\n\n### 修复后实测墨迹间距\nsocial 19px / square 15px / wide 13px（修复前为 0，贴字）。`poster-a4` 不受影响（间距约 12mm）。\n\n### 验证\n5 种格式渲染 + 后检全过；回归测试 4/4；二维码 5/5；三张成品整图目视质检通过。\n\n> 附带（与本仓无关）：opencode 桌面版对自定义 provider 模型默认 `capabilities.input.image=false`，\n> 需在模型配置显式声明 `modalities.input` 才能读图。详见 CHANGELOG。\n",
+      "prerelease": false,
+      "published_at": "2026-10-14T06:25:55Z"
+    },
+    {
+      "tag": "v2.1.0",
+      "name": "duduhaibao v2.1.0 — 风格预设库 + 横版头图 + 竞品对标",
+      "body": "## 对标同类项目后的升级\n\n分析 11 个同类项目（详见 `competitive-analysis.md`）后，补齐「风格 / 比例 / 质检」三块短板。\n\n### 新增\n- **风格预设库 `lib/styles.typ`**：6 套对比度校准配色（商务蓝 / 墨绿 / 雅紫 / 活力橙 /\n  中国红 / 极简墨）。`--input style=<名>`（`--style`）一键换色，模板一行不改。\n- **风格横向对比**：`scripts/render_styles.py` + `build.sh --styles` / `build.ps1 -Styles`。\n- **新格式：横版头图（16:9，1920×1080）** `poster-wide.typ`，用于文章头图 / 视频封面。\n- **`references/qa-rubric.md`**：交付质检清单（机器可验项绑定本仓护栏 + 人眼项 + 反 AI 味）。\n- **`competitive-analysis.md`**：与 11 个同类项目的对比与借鉴记录。\n\n### 变更\n- `preflight.py` 新增**样式闸门**：未知风格名报错，而非静默回退默认色；新增 `--list-styles`。\n- `SKILL.md`：先定形态再定风格、平台比例矩阵、风格预设、反通用 AI 观感。\n- README：五格式、风格预设表、与同类工具对照表、FAQ。\n- **项目中文名「嘟嘟海报」→「海报」。**\n\n### 为什么和它们不一样\n\n同赛道绝大多数是**图片模型提示词生成器**，都在跟「文字乱码」搏斗。本仓用 Typst\n**确定性渲染**——标题 / 日期 / 价格**永不乱码**，出矢量 PDF，零 API、可复现。\n\n### 验证（本地）\n\n5 种格式渲染 + 后检全过；回归测试 **4/4**；二维码可扫 **5/5**；风格库 6 套 + 样式闸门生效。\n",
+      "prerelease": false,
+      "published_at": "2026-10-14T06:25:54Z"
+    },
+    {
+      "tag": "v2.0.0",
+      "name": "duduhaibao v2.0.0 — 方形封面版 + 跨平台（Windows）支持",
+      "body": "## 一套数据，四种格式\n\n在原有 **A4 打印版 / 朋友圈版 / 易拉宝版** 之外，新增 **方形封面版（1:1）**，\n面向公众号首图 / 小红书封面。\n\n## 新增\n\n- **方形封面版 1:1**（`templates/poster-square.typ`，2160×2160 px）—— 已纳入 `build.sh`、\n  `preflight.py`、`check_qr.py` 与回归用例。\n- **Windows 原生渲染脚本 `example/build.ps1`**：无需 bash，一键渲染四种格式 + 预检双闸。\n- **字体可用性闸门**：`preflight.py` 用 `typst fonts` 核对字体栈，不可用直接报错 ——\n  把「字体静默回退」变成大声提示。\n- **`scripts/make_preview.py`**：跨平台预览图生成。\n\n## 修复\n\n- 模板硬编码 `Noto Sans CJK SC` 在 **Windows 上不存在** → Typst 静默回退、版式走样；\n  改用 `lib/tokens.typ` 的 `FONTS` 跨平台字体栈（`Noto Sans CJK SC` → `Noto Sans SC` → `Microsoft YaHei`）。\n- `run_tests.py` 写死 `/tmp` → `tempfile.gettempdir()`（Windows 可用）。\n- `subprocess` 在 Windows 按 GBK 解码 Typst 的 UTF-8 输出而崩溃 → 显式 UTF-8 解码。\n\n## 变更\n\n- 技能名 `poster-design` → `duduhaibao`，frontmatter 改中文触发词，适配 opencode。\n- 工具引用跨 Agent 中立：`vision_analyze` → `read`，`clarify` → `question`（附映射说明）。\n\n## 验证\n\n本地（Typst 0.15.1 / Windows）：四种格式全部渲染通过后检；回归测试 **4/4**；\n二维码可扫性 **4/4**；字体栈经 `typst fonts` 核对命中 `Noto Sans SC`。\n",
+      "prerelease": false,
+      "published_at": "2026-10-14T06:25:53Z"
+    }
+  ]
+}
