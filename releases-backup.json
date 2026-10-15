@@ -1,8 +1,15 @@
 {
   "_note": "Release 备份：git 里没有 Release 页，删库重建会丢，故单独备份。",
   "_repo": "Shine8592/duduhaibao",
-  "_exported": "2026-10-15T12:55:54",
+  "_exported": "2026-10-15T12:57:59",
   "releases": [
+    {
+      "tag": "v4.3.1",
+      "name": "duduhaibao v4.3.1 — Releases 备份/还原",
+      "body": "> 主题：**Releases 备份 / 还原**。起因是本仓库被删库重建，11 个 Release 页（标题 + 正文）\n> 全部归零 —— 而 **git 里只有提交和 tag，Release 不在 git 里**。虽然从本机会话数据库\n> 抢救回来了，但那次经历说明：必须有独立备份。\n\n### 新增\n- **`scripts/backup_releases.py`**：\n  - `export` —— 把全部 Release（标题 / 正文 / 时间）导出为 `releases-backup.json`；\n  - `restore` —— 从该文件一键还原（已存在则更新、不存在则新建），带 `--dry-run`。\n- 仓库内附 **`releases-backup.json`**（纳入 git）→ 从此 Release 有真正的双份。\n\n### 事件记录（诚实）\n- 2026-10-14 仓库重建 → Releases 归零。抢救分两步：先用 `CHANGELOG.md` 重建 11 篇\n  （干净但非原文）；再**复制**本机会话库 `opencode.db` 后用 SQLite 解析 `part` 表，\n  成功捞回 **10 篇原始手写正文**并按原文覆盖（v4.3.0 本就无原始 Release，保留 CHANGELOG 版）。\n- 教训：① **git 不含 Release**，删库重建必丢，得单独备份；② **抢救也要先验后发**——第一次\n  改用字节扫描捞取时，v3.1.0 捞出的其实是\"提交信息文件\"的内容（还串进了别的 JSON），\n  已全部回滚重做。字节扫描在长文本上不可靠，正解是解析结构化存储。",
+      "prerelease": false,
+      "published_at": "2026-10-15T04:57:39Z"
+    },
     {
       "tag": "v4.3.0",
       "name": "duduhaibao v4.3.0 — 栅格修订工具箱（repair_raster.py）",
