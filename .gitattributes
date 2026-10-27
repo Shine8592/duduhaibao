@@ -1,0 +1,35 @@
+# 声明二进制文件，禁止 git 做任何行尾/文本转换。
+#
+# 背景（2026-10-27 审计）：图片资产曾因「二进制 → 文本 → 二进制」往返，
+# 所有非法 UTF-8 字节被替换为 U+FFFD（EF BF BD），导致 PNG/JPEG 文件头即损坏、
+# 渲染直接失败。声明 binary 可阻止 git 参与这类转换。
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.bmp  binary
+*.ico  binary
+
+# 字体与其它二进制资产
+*.otf  binary
+*.ttf  binary
+*.ttc  binary
+*.woff binary
+*.woff2 binary
+*.pdf  binary
+*.xz   binary
+*.zip  binary
+*.mp4  binary
+*.mp3  binary
+
+# 文本资产：统一按 LF 存储（避免 CRLF 噪音 diff）
+*.typ   text eol=lf
+*.py    text eol=lf
+*.sh    text eol=lf
+*.md    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.json  text eol=lf
+*.toml  text eol=lf
+*.typst text eol=lf

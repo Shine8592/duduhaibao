@@ -44,6 +44,13 @@ jobs:
         run: pip install --quiet pillow pyzbar
 
       # ── 验证 ──────────────────────────────────────────────────
+      # 图片资产完整性：防止「二进制 → 文本 → 二进制」往返把高位字节
+      # 替换成 U+FFFD，导致 PNG/JPEG 文件头即损坏、渲染直接失败。
+      # 必须在渲染之前查，否则报错信息是 typst 的 Invalid PNG signature，
+      # 很难联想到是资产文件被文本化过。
+      - name: 图片资产完整性检查
+        run: python3 scripts/check_images.py
+
       # 护栏类测试：断言会不会响、正确配置会不会误报、溢出能不能抓到。
       # 不需要先渲染，用例自带 Typst 夹具。
       - name: 回归测试（断言 + 溢出像素检查）

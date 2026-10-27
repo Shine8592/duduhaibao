@@ -20,6 +20,7 @@ import re
 import subprocess
 import sys
 from collections import Counter
+from pathlib import Path
 
 # 项目根：默认当前工作目录，可用 --root 覆盖。
 # （不默认脚本所在目录：这个脚本放在项目外的 scripts/ 里，
@@ -410,6 +411,47 @@ def _print_section(title: str):
     for m in errors: print(f"  {RED}❌{OFF} {m}")
 
 
+def check_images(root=None):
+    """检查图片资产是否可解码（2026-10-27 新增）。
+
+    背景：图片资产曾因「二进制 → 文本 → 二进制」往返，所有高位字节被替换成
+    U+FFFD，导致 Typst 渲染时报 Invalid PNG signature / Illegal start bytes ——
+    报错指向 typst，很难联想到是资产文件被文本化过。
+    这里在渲染前就明确告诉用户「哪张图坏了、为什么坏」。
+    """
+    base = Path(root or ROOT)
+    imgs = [p for p in base.rglob("*")
+            if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+            and not any(part in {"dist", ".git", "node_modules"} for part in p.parts)]
+    if not imgs:
+        ok("图片资产: 未发现图片文件")
+        return
+    bad = []
+    for p in imgs:
+        try:
+            data = p.read_bytes()
+        except Exception as e:
+            bad.append((p, f"读取失败: {e}"))
+            continue
+        n = data.count(b"\xef\xbf\xbd")
+        if n:
+            bad.append((p, f"含 {n} 个 U+FFFD 替换字符（文件被文本往返损坏，需用二进制方式重新上传）"))
+            continue
+        try:
+            from PIL import Image
+            with Image.open(p) as im:
+                im.verify()
+        except ImportError:
+            pass
+        except Exception as e:
+            bad.append((p, f"解码失败: {type(e).__name__}: {str(e)[:60]}"))
+    if bad:
+        for p, why in bad:
+            err(f"图片损坏: {p.relative_to(base)} —— {why}")
+    else:
+        ok(f"图片资产: {len(imgs)} 个文件均可正常解码")
+
+
 def main():
     ap = argparse.ArgumentParser(description="海报预检")
     ap.add_argument("--root", default=None,
@@ -443,7 +485,8 @@ def main():
         check_fonts()
         check_style(a.style or os.environ.get("POSTER_STYLE"))
         check_contrast()
-        _print_section("预检（渲染前 · 数据 + 字体 + 风格 + 对比度）")
+        check_images()
+        _print_section("预检（渲染前 · 数据 + 字体 + 风格 + 对比度 + 图片）")
         total_errors += errors
         total_warns += warns
         oks.clear(); warns.clear(); errors.clear()
