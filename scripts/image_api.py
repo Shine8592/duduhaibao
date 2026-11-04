@@ -27,6 +27,36 @@ import urllib.request
 from datetime import datetime
 from pathlib import Path
 
+# ── .env 兜底加载 ──
+# Hermes 的 gateway 进程不加载 ~/.hermes/.env（实测进程环境里一个 API key 都没有），
+# 只把 .env 当工具运行时配置，不会 export 给子进程。所以技能脚本直接读 os.environ
+# 会拿不到 key —— 症状是脚本报「缺 key」而 .env 里明明写着。
+# 这里做兜底：仅在环境变量缺失时读文件，已存在的环境变量一律不覆盖。
+def _load_env_fallback():
+    if os.environ.get("DUDUHAIBAO_IMAGE_KEY") or os.environ.get("YANER_API_KEY"):
+        return
+    env_path = Path.home() / ".hermes" / ".env"
+    if not env_path.is_file():
+        return
+    try:
+        text = env_path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, val = line.partition("=")
+        key = key.strip()
+        if key.startswith("export "):
+            key = key[7:].strip()
+        val = val.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = val
+
+
+_load_env_fallback()
+
 # ── 端点与模型（可用环境变量覆盖，便于换供应商 / 灰度）──
 API_BASE = os.environ.get("DUDUHAIBAO_IMAGE_API", "https://token.yaner.fun/v1")
 API_KEY = os.environ.get("DUDUHAIBAO_IMAGE_KEY") or os.environ.get("YANER_API_KEY") or ""

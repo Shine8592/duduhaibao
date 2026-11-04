@@ -2,6 +2,26 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [4.4.4] — 2026-11-04
+
+> 主题：gateway 类运行时读不到 `.env` —— 明明配了 key 却报「缺 key」
+
+### Fixed
+
+- **`scripts/image_api.py`：宿主进程不加载 `~/.hermes/.env` 时脚本拿不到 key**。
+  某些 AI agent 运行时（如 Hermes gateway）只把 `.env` 当作工具自身的配置，**不会把它
+  注入子进程环境**。技能脚本直接读 `os.environ` 就会失败，症状是「脚本报缺 key，但
+  `.env` 里明明写着」。现增加 `_load_env_fallback()`：**仅在环境变量缺失时**读取
+  `~/.hermes/.env`，已存在的环境变量一律不覆盖 —— 优先级保持
+  `真实环境变量 > .env 文件 > 内置默认值`。
+- 对普通用户**无副作用**：`~/.hermes/.env` 不存在时立即返回，行为与之前完全一致。
+
+### Verified
+
+- 模拟 gateway 环境（`env -i`，环境里一个 API key 都没有，只有 `.env` 文件）→
+  端点与 key 均正确解析。
+- 模拟普通用户（`HOME` 下无 `.hermes/`）→ 回落内置默认值，无报错。
+
 ## [4.4.3] — 2026-11-04
 
 > 主题：交付物全功能复验修复 —— `check_images.py` 对合法 JPG 误报

@@ -261,6 +261,10 @@ python scripts/analyze_reference.py --image 参考图.jpg --out out/ref --name m
 **边界**：改成品上的**错字 / 日期 / 流程**走 `scripts/repair_raster.py`（像素级、确定性、
 `--report` 留验证报告），**不要用生图模型改字**。口诀：edit 管画面，repair_raster 管文字。
 
+> **在 AI agent 运行时里调用时**：宿主进程可能不把 `.env` 注入子进程环境。
+> `image_api.py` 会在环境变量缺失时兜底读取 `~/.hermes/.env`，因此无需手工 `export`；
+> 真实环境变量依然优先（不会覆盖）。
+
 ```bash
 export DUDUHAIBAO_IMAGE_KEY="..."
 # 成套插画（含接触表）

@@ -4,7 +4,7 @@ description: 海报 / 邀请函 / 活动图 / 日历类视觉稿的印刷级生�
 license: MIT
 compatibility: 需要 Typst ≥ 0.13、Python 3.9+、Pillow；中文字体（Windows 自带微软雅黑 / Linux 装 fonts-noto-cjk）。AI 生图/改图为可选增强，需 DUDUHAIBAO_IMAGE_KEY（缺了仍可纯本地渲染）
 metadata:
-  version: "4.4.3"
+  version: "4.4.4"
 ---
 
 # 海报 — 中文优先的印刷级海报生成
