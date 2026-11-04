@@ -211,6 +211,27 @@ decorative blobs and gratuitous gradients, stacked buzzwords in the copy, a rain
 accent colours, icons that rendered as tofu. The full checklist is in
 `references/qa-rubric.md`.
 
+## Auditing the whole pipeline
+
+When asked to "run every stage of the whole project" or "check for bugs nobody has found yet",
+the deliverable is not "the scripts ran" — it is a judgement per stage, each backed by a command
+someone else can re-run, plus a severity-ranked defect list.
+
+Three ground rules decide whether the audit is worth anything:
+
+- **How you read exit codes.** `cmd | tail -n 20; echo $?` reports `tail`'s status — a failing
+  command looks like success. Redirect to a file first, or use `${PIPESTATUS[0]}`.
+- **Layered error codes.** Bad arguments → RC=2 (argparse semantics); runtime failure → RC=1;
+  success → RC=0. All three collapsing into one value means the error handling has no layers —
+  that is itself a defect worth reporting.
+- **An orphaned reference is a missing capability.** A new `references/*.md` that no other file
+  mentions exists on disk and nowhere in the agent's reachable context. Grep every reference name
+  against `SKILL.md` + the other references before calling the docs "done".
+
+The full 26-stage checklist (ordered by dependency), the defect-type catalogue, and a
+before/after table of *wrong fixes that looked right* are in
+`references/full-pipeline-audit.md`.
+
 ## Guarding a render pipeline
 
 Rendering fails in two very different ways, and only one of them makes noise. Typst **errors** on a
