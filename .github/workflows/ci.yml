@@ -64,7 +64,10 @@ jobs:
           rc=$?
           set -e
           test "$rc" -eq 2 || { echo "❌ 改字指令未被正确拦截（rc=$rc）"; exit 1; }
-          echo "✅ 生图脚本冒烟通过（含改字拦截）"
+          # 画面指令不得被误拒（--check-text 只做检查、不调模型，rc 应为 0）
+          python3 scripts/edit_image.py --check-text --in example/qr-demo.png --prompt "把背景调暖" >/dev/null 2>&1 \
+            || { echo "❌ 画面指令被误拒"; exit 1; }
+          echo "✅ 生图脚本冒烟通过（改字拦截 + 画面放行）"
 
       # 护栏类测试：断言会不会响、正确配置会不会误报、溢出能不能抓到。
       # 不需要先渲染，用例自带 Typst 夹具。

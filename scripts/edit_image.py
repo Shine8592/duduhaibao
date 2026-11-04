@@ -78,6 +78,8 @@ def main():
     ap.add_argument("--seed", type=int)
     ap.add_argument("--check-text", action="store_true",
                     help="只检查输入图文字并提示边界，不调用模型")
+    ap.add_argument("--allow-text", action="store_true",
+                    help="显式放行：确认指令只改画面（措辞里提到文字对象词时用）")
     args = ap.parse_args()
 
     if not args.inp:
@@ -99,16 +101,33 @@ def main():
         print("❌ 需要 --out 和 --prompt", file=sys.stderr)
         return 1
 
-    # 边界防护：指令里出现「改文字」类词，直接拒绝。
-    # 用「动作词 × 文字对象」组合判定，避免只挡住「改字」而漏掉「把日期改成…」。
-    text_objects = ["字", "日期", "时间", "文字", "文案", "标题", "标点", "数字", "text", "date", "word", "number"]
-    change_verbs = ["改", "换", "删", "去掉", "加", "添", "修改", "替换", "change", "edit", "replace", "remove"]
-    hit = any(v in args.prompt for v in change_verbs) and any(o in args.prompt for o in text_objects)
-    # 「把字留着 / 保留文字」这类是防护语，不算改字意图
-    intent_keep = any(k in args.prompt for k in ("保留文字", "文字不变", "不要改字", "keep the text"))
-    if hit and not intent_keep:
-        print("❌ 检测到「改文字」类指令。改成品上的文字请走 repair_raster.py，", file=sys.stderr)
-        print("   生图模型处理文字必乱码。", file=sys.stderr)
+    # 边界防护：edit 模型只管画面，绝不该处理文字。
+    # 设计取舍（实测踩坑后定的）：不猜「改字意图」—— 词表/正则两边都会漏
+    # （漏 rename the text / 误伤 update the color）。改为保守策略：
+    #   指令里出现任何「文字对象词」→ 一律拒绝，除非用户显式 --allow-text。
+    # 宁可误拒（画面指令里若恰好提到"日期条"，加 --allow-text 即可），也不漏放改字指令。
+    # 真正改字请走 repair_raster.py；误拒时的 escape hatch 让意图显式，比隐式猜测可靠。
+    # 中文按子串（"日期条"也算），英文按词边界（避免 update 里的 date / rename 里的 name 误伤）
+    import re as _re
+    _TEXT_OBJECTS_CN = ["字", "日期", "时间", "文字", "文案", "标题", "标点", "数字",
+                        "年份", "月份", "落款", "署名"]
+    _TEXT_OBJECTS_EN = ["text", "date", "time", "title", "word", "wording", "heading",
+                        "label", "caption", "number", "digit", "letter", "typo", "name"]
+    low = args.prompt.lower()
+    hit_words = [w for w in _TEXT_OBJECTS_CN if w in args.prompt]
+    hit_words += [w for w in _TEXT_OBJECTS_EN
+                  if _re.search(r"\b" + _re.escape(w) + r"\b", low)]
+    # 「把 <数字串> 改成/换成 <数字串>」= 改年份/日期/门牌，也属改字
+    if _re.search(r"(把|将)\s*\d{2,4}\s*(改成|换成|改为|改掉)", args.prompt):
+        hit_words.append("数字年份")
+    _KEEP_PATTERNS = ["保留文字", "文字不变", "不要改字", "不改字", "keep the text",
+                      "text unchanged", "leave the text"]
+    intent_keep = any(k in args.prompt for k in _KEEP_PATTERNS)
+    if hit_words and not intent_keep and not getattr(args, "allow_text", False):
+        print("❌ 指令涉及文字对象（%s）。改成品上的文字请走 repair_raster.py。"
+              % "、".join(hit_words[:4]), file=sys.stderr)
+        print("   生图模型画中文字形不可靠（必乱码），文字须由排版层或像素精修来画。", file=sys.stderr)
+        print("   若确为画面指令只是措辞里提到这些词，可加 --allow-text 显式放行。", file=sys.stderr)
         return 2
 
     if args.crop:

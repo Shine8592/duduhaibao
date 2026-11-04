@@ -106,6 +106,11 @@ python scripts/edit_image.py --check-text --in poster.png
 **允许**：照片艺术化、底稿风格化、去 AI 水印（豆包/即梦类半透明描边）、器皿/轮子变形修复、配色描边统一。
 **禁止**：改错字、改日期、改时间、改活动流程、改任何文字 —— 一律 `repair_raster.py`。
 
+> 边界判定用**保守策略**：指令里出现「文字对象词」（日期/标题/text/title…）即拒绝，
+> 不猜意图（词表猜法实测两头漏）。若确为画面指令只是措辞提到这些词，加 `--allow-text`
+> 显式放行；例如 `--prompt "平衡一下日期条附近的配色" --allow-text`。
+> `scripts/edit_image.py` 内置该逻辑，CI 冒烟会断言改字指令返回码 = 2。
+
 ## 六、成本记录（P2-1）
 
 每次 API 调用在 `DUDUHAIBAO_COST_LOG` 落一行 JSONL（kind / model / ok / elapsed_s / credit，不记图片内容）。
