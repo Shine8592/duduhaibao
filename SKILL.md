@@ -245,6 +245,18 @@ Default to the warm/cartoon direction for any event built around an activity peo
 
 Build both kits from the same primitives so only tokens change: background wash + accent blobs, a header chip row, a framed photo with tape or border accents, a title block with a small ornament, info cards per line item, and a footer line. Full element vocabulary, palettes, and the complete cartoon kit specification are in `references/style-directions.md`.
 
+### 卡通插画集：AI 生成配图 + 排版
+
+「卡通带图片」不是把模板里的图片位换成插画——插画要自己生成，而且**先出齐整套再排版**（缺图会逼你留占位，补齐后必然重排）。
+
+- 每张共用同一条 STYLE LOCK 前缀，只换主体；**主视觉最容易跑偏**成「有透视的风景」而其余是「扁平图标」，风景类要额外写死 `no perspective lines, sticker-like, icon style`。
+- **一张接触表验整套**，别逐张看——同套一致性只在拼图里看得出来。
+- 风格差在描边粗细/细节密度时，**先改容器**（统一规格的圆形贴纸或圆角画框）而不是重画；差在构图类型、或器皿轮子变形，才重画。视觉评审对成套插画会反复报「没完全统一」，那是过度挑刺。
+- 图内不许出现文字，标题/时间/地址全部由 HTML 层叠加。
+- 验收**先量后看**：`tesseract -l chi_sim` 回读全文 + 像素探边（最下墨迹行、底部安全区）+ 只裁不确定的局部给视觉。**OCR 漏读低对比度文字不等于没渲染**，要放大确认再决定改不改。
+
+完整 recipe（水印自查、prompt 模板、接触表脚本、Chromium 命令、探边片段、卡通字体与交付）见 `references/illustration-set-posters.md`。
+
 **Both directions are implemented now.** The shipped example line has the formal set
 (`poster-a4 / social / square / story / wide / banner`) *and* the playful set:
 **`poster-cute`** (rounded cards, numbered badges, sticker dots, a rounded CJK face —
