@@ -221,6 +221,36 @@ python scripts/analyze_reference.py --image 参考图.jpg --out out/ref --name m
 
 ---
 
+## AI 生图 / 改图（4.4.0，可选增强）
+
+> 三个渲染路线仍是**默认**、零 API、纯本地。下面两个模型是**可选**的，
+> 只负责「画面」，文字层永远由排版引擎以真文字叠加 —— 海报当然带文字，
+> 只是不交给生图模型去画字形（AI 中文必乱码）。
+
+| 模型 | 能力 | 用途 | 脚本 |
+|---|---|---|---|
+| `cn:hunyuan-image-alpha` | 文生图 | 卡通插画集：一次生成整套插画（主视觉 + 图标）+ 接触表 | `scripts/generate_illustration.py` |
+| `cn:hunyuan-image-alpha-edit` | 图生图/改图/修图 | 画面级重绘：照片艺术化、去 AI 水印、局部重绘、插画微调 | `scripts/edit_image.py` |
+
+模型由供应商 yaner 提供（OpenAI-compatible 端点），协议与封装见 `scripts/image_api.py`、
+分工与硬边界见 `references/ai-image-models.md`。配好 `DUDUHAIBAO_IMAGE_KEY` 即可用，
+`python scripts/doctor.py` 会探测后端可用性；缺 key 不影响本地渲染。
+
+**边界**：改成品上的**错字 / 日期 / 流程**走 `scripts/repair_raster.py`（像素级、确定性、
+`--report` 留验证报告），**不要用生图模型改字**。口诀：edit 管画面，repair_raster 管文字。
+
+```bash
+export DUDUHAIBAO_IMAGE_KEY="..."
+# 成套插画（含接触表）
+python scripts/generate_illustration.py --subjects "主视觉" "蛋糕" "野餐篮" "大巴" --contact
+# 画面级改图
+python scripts/edit_image.py --in photo.jpg --out styled.png --prompt "转成暖色扁平卡通插画"
+```
+
+每次调用落成本日志（`image_cost.jsonl`），交付消息回显「插画 N 次 / 改图 N 次 / 总耗时」。
+
+---
+
 ## 风格预设 —— 换一个名字，全篇换色
 
 配色不散落在模板里，而是集中在 `lib/styles.typ`（**18 套**，全部经 WCAG 对比度闸门校准）：

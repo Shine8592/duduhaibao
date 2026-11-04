@@ -2,6 +2,52 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [4.4.0] — 2026-11-04
+
+> 主题：接入两个 AI 生图/改图模型 + 固化三次真实任务的流程教训
+> 基线：GitHub master 4.3.1（含「卡通插画集」章节）；本机旧副本 4.3.0 已同步对齐。
+
+### 新增 · AI 生图 / 改图（质的提升）
+
+两个模型由供应商 **yaner** 提供，挂在 OpenAI-compatible 端点 `token.yaner.fun/v1`：
+
+| 模型 | 能力 | 在技能里负责 |
+|---|---|---|
+| `cn:hunyuan-image-alpha` | 文生图 | 卡通插画集：一次生成整套插画（主视觉 + 图标） |
+| `cn:hunyuan-image-alpha-edit` | 图生图/改图/修图 | 画面级重绘：照片艺术化、底稿风格化、去 AI 水印、局部重绘 |
+
+- **`scripts/image_api.py`**：统一 API 封装（纯标准库、密钥只从环境变量读、每次调用落成本 JSONL）。
+  协议实测坐实：`POST /images/generations`，图生图额外带 `image: <base64>` 且确被消费。
+- **`scripts/generate_illustration.py`**：成套插画 CLI，STYLE LOCK 后端无关（Agnes 2.5 可 `--backend agnes` 回退），
+  主视觉自动加「无透视/贴纸感」锁，产出接触表。
+- **`scripts/edit_image.py`**：画面级改图 CLI，内置「改文字类指令」拒绝 + `--crop` 局部改 + `--check-text`。
+- **`references/ai-image-models.md`**：模型分工、协议、成本记录、三条硬边界。
+- **`scripts/doctor.py`**：新增 AI 后端可用性探测（缺 key 只提示，不阻断本地渲染）。
+
+### 边界（写进 SKILL.md / reference，防倒退）
+
+- **海报的文字照常要有**，由排版层以真文字叠加在画面之上；只是 AI 生成的插画/背景图里不烧字
+  （生图模型画中文字形不可靠）。
+- **改成品上的错字/日期/流程 → `repair_raster.py`**；改画面 → `hunyuan-image-alpha-edit`。两者不混。
+- 零 API 仍是默认路线，两个模型是可选增强。
+
+### 新增 · 流程地基（三次真实海报任务复盘）
+
+- **SKILL.md**：改成品图**禁止新建一次性 `fix*.py`**，一律 `repair_raster.py`；新增
+  「工作目录纪律」（`_wip/` 中间产物、验收一次跑完、客户物料 P0 阻断、成本回显）。
+- **`scripts/repair_raster.py`**：`verify` 子命令新增 `--report`，输出结构化 JSON
+  （`changed_pixels` / `target_region` / `pixels_outside_target`），交付消息必须回显这三个数。
+- **`references/client-material-checklist.md`**（新）：信息完整度 P0 阻断清单（全称/日期/地址/报名方式/落款）
+  + 保险银行合规（无收益承诺、公司全称、风险提示、合规过目）。
+- **`references/illustration-set-posters.md`**：新增「送视觉前必须缩到 ≤1024 / 裁 ≤1200×900 局部」硬规则
+  （2160×2880 直送 vision 实测超时）+ 现成 PIL 缩图片段 + 「机器检查未全过不许调视觉」。
+
+### 验证
+
+- 全部 18 个 .py 编译通过；`doctor.py` 必需项齐全。
+- 两个模型端到端实调：文生图出图 + 接触表、图生图改色、改字指令拦截，全通过。
+- `repair_raster.py --report` 三个数实测回显；`preflight.py` / 回归测试 / 9 格式渲染见下。
+
 ## [4.3.1] — 2026-10-14
 
 > 主题：**Releases 备份 / 还原**。起因是本仓库被删库重建，11 个 Release 页（标题 + 正文）

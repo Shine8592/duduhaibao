@@ -89,6 +89,26 @@ def main():
     else:
         warn("HTML 路线未就绪（weasyprint / pymupdf）—— 不用 HTML 路线可忽略（可选）")
 
+    # 可选：AI 生图 / 改图后端（4.4.0）—— 零 API 仍是默认路线，缺了只提示不阻断
+    import os
+    img_key = os.environ.get("DUDUHAIBAO_IMAGE_KEY") or os.environ.get("YANER_API_KEY")
+    if img_key:
+        try:
+            import image_api
+            models = image_api.list_models()
+            want = ["cn:hunyuan-image-alpha", "cn:hunyuan-image-alpha-edit"]
+            got = [m for m in want if m in models]
+            if len(got) == 2:
+                ok("AI 生图后端就绪：文生图 + 图生图（hunyuan-image-alpha / -edit）")
+            elif got:
+                warn(f"AI 生图后端部分可用：{got}（另一个模型 id 未出现在 /models）")
+            else:
+                warn("已配置 key 但 /models 未列出 hunyuan-image-alpha 系列（检查端点/权限）")
+        except Exception as e:
+            warn(f"AI 生图后端探测失败（不影响本地渲染）：{e}")
+    else:
+        warn("未配置 DUDUHAIBAO_IMAGE_KEY —— 生图/改图功能不可用（本地确定性渲染不受影响，默认路线）")
+
     print()
     if fails:
         print(f"{RED}✗ 缺 {fails} 个必需项，先装好再跑 build{OFF}")

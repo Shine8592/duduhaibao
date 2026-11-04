@@ -163,6 +163,9 @@ def emit_typst(years, path):
         season, note = TERM_INFO[name]
         lines.append(f'  "{name}": (season: "{season}", note: "{note}"),')
     lines += (")", "")
+    # 4.4.0：--root 指向新目录时 lib/ 可能不存在，必须先建父目录再写，
+    # 否则 open() 直接 FileNotFoundError（实测复现）。
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     open(path, "w", encoding="utf-8").write("\n".join(lines) + "\n")
     return path
 

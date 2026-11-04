@@ -11,6 +11,10 @@ example/dist/
 dist/
 *.zip
 
+# ── 4.4.0：工作目录中间产物 / 成本日志（绝不入库）──
+_wip/
+image_cost.jsonl
+
 # ── Python ──
 __pycache__/
 *.py[cod]

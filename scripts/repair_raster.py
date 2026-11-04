@@ -385,11 +385,56 @@ def main():
     p.add_argument('--region', action='append', default=[],
                    help='name:x0,y0,x1,y1，可重复')
     p.add_argument('--clean-rows', type=region, help='填充区抽样 x0,y0,x1,y1')
+    p.add_argument('--report', metavar='PATH',
+                   help='4.4.0：输出结构化报告 JSON（交付消息必须回显其中三个数）')
 
     args = ap.parse_args()
     if args.cmd == 'bands' and not args.dst and not args.count:
         raise SystemExit('bands：需给 --dst 或 --count')
+    if args.cmd == 'verify' and getattr(args, 'report', None):
+        _write_verify_report(args)
+        return
     args.fn(args)
+
+
+def _write_verify_report(args):
+    """4.4.0：把 verify 结论落成结构化 JSON，交付消息直接回显这三个数。
+
+    需求来源：三次真实海报任务里，改完「改了哪里 / 改了多少像素 / 有没有越界」
+    全靠人回忆。这里把 changed_pixels / target_region / pixels_outside_target
+    固化为机器可读、可回显的产物。
+    """
+    import json
+    o = load(args.original)
+    f = load(args.final)
+    if o.shape != f.shape:
+        raise SystemExit('尺寸不同 %s vs %s' % (o.shape, f.shape))
+    d = np.abs(o - f).sum(axis=2)
+    ch = d > 40
+    m = np.zeros_like(ch)
+    regions = []
+    for spec in args.region:
+        name, r = spec.split(':', 1)
+        x0, y0, x1, y1 = region(r)
+        m[y0:y1, x0:x1] = True
+        regions.append({'name': name, 'box': [x0, y0, x1, y1],
+                        'changed_pixels': int(ch[y0:y1, x0:x1].sum())})
+    outside = int((ch & ~m).sum())
+    report = {
+        'original': str(args.original),
+        'final': str(args.final),
+        'size': [int(f.shape[1]), int(f.shape[0])],
+        'changed_pixels': int(ch.sum()),
+        'target_region': regions,
+        'pixels_outside_target': outside,
+    }
+    with open(args.report, 'w', encoding='utf-8') as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=2)
+    print('报告已写出:', args.report)
+    print('  changed_pixels        =', report['changed_pixels'])
+    print('  target_region         =', len(regions), '个区域',
+          [r['name'] for r in regions])
+    print('  pixels_outside_target =', outside, '（应为 0）')
 
 
 if __name__ == '__main__':

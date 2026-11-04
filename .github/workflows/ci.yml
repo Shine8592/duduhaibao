@@ -51,6 +51,21 @@ jobs:
       - name: 图片资产完整性检查
         run: python3 scripts/check_images.py
 
+      # ── 4.4.0：AI 生图/改图脚本冒烟（不需要 API key，只验证 import + CLI 能起）──
+      # 这些是新增能力；不进 CI 的话，改坏了要等用户真调模型才发现。
+      - name: AI 生图/改图脚本冒烟
+        run: |
+          python3 -m py_compile scripts/image_api.py scripts/generate_illustration.py scripts/edit_image.py
+          python3 scripts/generate_illustration.py --help > /dev/null
+          python3 scripts/edit_image.py --help > /dev/null
+          # 改字指令必须被拦截（返回码 2）；其它非 0 是脚本坏了，不是拦截成功
+          set +e
+          python3 scripts/edit_image.py --in example/qr-demo.png --out /tmp/x.png --prompt "把日期改成11月8日" >/dev/null 2>&1
+          rc=$?
+          set -e
+          test "$rc" -eq 2 || { echo "❌ 改字指令未被正确拦截（rc=$rc）"; exit 1; }
+          echo "✅ 生图脚本冒烟通过（含改字拦截）"
+
       # 护栏类测试：断言会不会响、正确配置会不会误报、溢出能不能抓到。
       # 不需要先渲染，用例自带 Typst 夹具。
       - name: 回归测试（断言 + 溢出像素检查）

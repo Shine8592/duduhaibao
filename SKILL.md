@@ -1,10 +1,10 @@
 ---
 name: duduhaibao
-description: 海报 / 邀请函 / 活动图 / 日历类视觉稿的印刷级生成（A4 打印、朋友圈 3:4、方形 1:1 封面、易拉宝 80×200cm）。当用户要做海报、邀请函、活动卡片、宣传图、分享图、日历/排期图，或要修改用户发来成品图上的错字时使用。Typst / Pillow / HTML 三路线渲染，纯本地、无浏览器、无 MCP。Do NOT trigger when 交付物是 PPT（用 duduppt）、Excel（用 duduexcel）或纯文字文案。
+description: 海报 / 邀请函 / 活动图 / 日历类视觉稿的印刷级生成（A4 打印、朋友圈 3:4、方形 1:1 封面、易拉宝 80×200cm）。当用户要做海报、邀请函、活动卡片、宣传图、分享图、日历/排期图，或要修改用户发来成品图上的错字时使用。Typst / Pillow / HTML 三路线渲染，纯本地、无浏览器、无 MCP；4.4.0 起可选接入 AI 生图（Hunyuan Image Alpha 文生图）与改图修图（Image Alpha Edit 图生图，画面级）用于卡通插画集与照片风格化。Do NOT trigger when 交付物是 PPT（用 duduppt）、Excel（用 duduexcel）或纯文字文案。
 license: MIT
-compatibility: 需要 Typst ≥ 0.13、Python 3.9+、Pillow；中文字体（Windows 自带微软雅黑 / Linux 装 fonts-noto-cjk）
+compatibility: 需要 Typst ≥ 0.13、Python 3.9+、Pillow；中文字体（Windows 自带微软雅黑 / Linux 装 fonts-noto-cjk）。AI 生图/改图为可选增强，需 DUDUHAIBAO_IMAGE_KEY（缺了仍可纯本地渲染）
 metadata:
-  version: "4.3.1"
+  version: "4.4.0"
 ---
 
 # 海报 — 中文优先的印刷级海报生成
@@ -31,6 +31,28 @@ It also covers **date-grid artifacts** — calendars, year/month series, schedul
 5. **Render.** HTML route: `scripts/render_html_to_png.py` (WeasyPrint + PyMuPDF, no browser — run it with the interpreter that has those packages, e.g. `/path/to/venv/bin/python`, and pass `--expect WxH` so a wrong page size fails loudly rather than shipping). Typst route: `typst compile --format png --ppi 300`. Pillow route: direct `save()`.
 6. **Verify the PNG with `read`** (see loop below), fix the HTML, re-render. Do not sign off by re-reading your own HTML or trusting a prior successful run.
 7. **Report exact output dimensions** and deliver the files.
+
+### Working-directory & verification discipline (4.4.0)
+
+Three real jobs left 33 `_`-prefixed temp files and 10 intermediate images in the working
+folder, and re-rendered 3× on a "render → glance → tweak" loop. These are process rules, not style:
+
+- **All intermediates go to `<工作目录>/_wip/`.** Deliverables (png/jpg/pdf), the one generation
+  script, and `_wip/` are the only things allowed in the folder root. Clean `_wip/` on delivery
+  (keep the last master + one contact sheet for traceability). Never leave `_foo.png` / `fix2.py`
+  in the root — you cannot tell which file is final.
+- **Verify in one batch, not one glance at a time.** After render, run all three machine checks
+  (`preflight.py` → `tesseract -l chi_sim --psm 6` → downscale to ≤1024) *before* calling vision
+  once. A vision call is far more expensive than the three local checks. See the hard rule in
+  `references/illustration-set-posters.md §5`.
+- **Client materials are gated, not "a side note".** Before delivering any poster, walk
+  `references/client-material-checklist.md`: full entity name, date+weekday+year, full address,
+  sign-up method, organizer signature. **Any P0 item missing → ask the user first**; only an
+  explicit "ship as-is" unblocks, and that answer is recorded in the delivery message. Insurance
+  / banking materials add compliance checks (no guaranteed-return wording, full legal name).
+- **Record generation cost.** Delivery message includes one line, e.g.
+  `生成成本：插画 5 次调用（4 用 1 弃）· 渲染 3 次 · 总耗时 21 分钟`.
+  The user's rule is "stop when free quota is exhausted" — without a count you cannot tell.
 
 ## Page sizes
 
@@ -257,6 +279,19 @@ Build both kits from the same primitives so only tokens change: background wash 
 
 完整 recipe（水印自查、prompt 模板、接触表脚本、Chromium 命令、探边片段、卡通字体与交付）见 `references/illustration-set-posters.md`。
 
+**4.4.0 起，成套插画由生图模型生成**（不再到处找现成图/手画 SVG）：
+`cn:hunyuan-image-alpha`（文生图）一次出齐整套，`python scripts/generate_illustration.py
+--subjects "主视觉" "图标1" ... --contact` 直接产出插画 + 接触表；`--backend agnes`
+可回退到旧的 agnes-image-2.5-flash。STYLE LOCK 是后端无关的，换模型不必重调 prompt。
+
+> **两个 AI 模型的分工与硬边界见 `references/ai-image-models.md`**：
+> 文生图 `cn:hunyuan-image-alpha` 管「生成插画」；图生图 `cn:hunyuan-image-alpha-edit`
+> 管「画面级改图/修图」（照片艺术化、去水印、局部重绘）。
+> **海报的文字照常要有**，由排版层以真文字叠加在画面之上；只是 AI 生成的插画/背景图里
+> 不烧字、改成品上的错字/日期/流程也不交给生图模型（走 `repair_raster.py`）——
+> 因为生图模型画中文字形不可靠，文字必须由能保证字形正确的排版层负责。
+> 零 API 仍是默认路线，两个模型是可选增强；模型调用次数/耗时记入成本日志并在交付回显。
+
 **Both directions are implemented now.** The shipped example line has the formal set
 (`poster-a4 / social / square / story / wide / banner`) *and* the playful set:
 **`poster-cute`** (rounded cards, numbered badges, sticker dots, a rounded CJK face —
@@ -300,6 +335,18 @@ then reports "字号偏小" regardless of the real size. Judge type size against
 crop a region at full resolution and review that crop instead.
 
 ## Revising an existing poster
+
+> **4.4.0 分流：两种「改图」别混。**
+> - **改画面**（照片艺术化、底稿风格化、去 AI 水印、器皿/轮子变形修复）→
+>   `cn:hunyuan-image-alpha-edit`，走 `scripts/edit_image.py`，见 `references/ai-image-models.md`。
+> - **改文字**（错字、日期、时间、活动流程、任何字面内容）→ 就是本节的 `repair_raster.py`，
+>   像素级、确定性、文字不乱。**绝不能用生图模型改字**（AI 中文必乱码）。
+>
+> **硬规则（4.4.0，三条实战教训）**：改成品图**禁止新建一次性 `fix*.py` / `p*.py` 脚本**，
+> 一律 `python scripts/repair_raster.py <子命令>`。历史上某工作目录堆了 9 个一次性修补脚本，
+> 每个都重新推导坐标、重新踩坑、且改完不留验证记录。工具层已把每个坑编码成守卫，绕过它等于白交学费。
+> 交付消息**必须回显** `repair_raster.py --report` 的三个数：`changed_pixels` / `target_region` /
+> `pixels_outside_target`（目标区外应恒为 0），缺一项视为未完成。
 
 When the user sends a finished poster (photo, screenshot, or scan) and asks for a wording fix, the deliverable is the *same image* with the minimum number of pixels changed — not a redesign. **The runnable tool is `scripts/repair_text.py`** (locate → identify font → erase → paste → diff proof). If the source file exists, edit the source instead — the bitmap path always leaves antialiasing differences. **Load this skill before writing any pixel script** — an ad-hoc PIL script re-derives every pitfall below one at a time, each costing a round-trip. Full recipe in `references/raster-text-repair.md`; the shape is:
 
