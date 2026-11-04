@@ -1,10 +1,10 @@
 ---
 name: duduhaibao
-description: 海报 / 邀请函 / 活动图 / 日历类视觉稿的印刷级生成（A4 打印、朋友圈 3:4、方形 1:1 封面、易拉宝 80×200cm）。当用户要做海报、邀请函、活动卡片、宣传图、分享图、日历/排期图，或要修改用户发来成品图上的错字时使用。Typst / Pillow / HTML 三路线渲染，纯本地、无浏览器、无 MCP；4.4.0 起可选接入 AI 生图（Hunyuan Image Alpha 文生图）与改图修图（Image Alpha Edit 图生图，画面级）用于卡通插画集与照片风格化。Do NOT trigger when 交付物是 PPT（用 duduppt）、Excel（用 duduexcel）或纯文字文案。
+description: 海报 / 邀请函 / 活动图 / 日历类视觉稿的印刷级生成（A4 打印、朋友圈 3:4、方形 1:1 封面、易拉宝 80×200cm）。当用户要做海报、邀请函、活动卡片、宣传图、分享图、日历/排期图，或要修改用户发来成品图上的错字时使用。若用户未指明尺寸，先用 scripts/suggest_size.py 给出带比例+像素的常用尺寸推荐（如网络传播/微信单图 3:4 1080×1440、朋友圈九宫格 1:1 1080×1080）并让用户选。Typst / Pillow / HTML 三路线渲染，纯本地、无浏览器、无 MCP；4.4.0 起可选接入 AI 生图（Hunyuan Image Alpha 文生图）与改图修图（Image Alpha Edit 图生图，画面级）用于卡通插画集与照片风格化。Do NOT trigger when 交付物是 PPT（用 duduppt）、Excel（用 duduexcel）或纯文字文案。
 license: MIT
 compatibility: 需要 Typst ≥ 0.13、Python 3.9+、Pillow；中文字体（Windows 自带微软雅黑 / Linux 装 fonts-noto-cjk）。AI 生图/改图为可选增强，需 DUDUHAIBAO_IMAGE_KEY（缺了仍可纯本地渲染）
 metadata:
-  version: "4.4.1"
+  version: "4.4.2"
 ---
 
 # 海报 — 中文优先的印刷级海报生成
@@ -21,12 +21,34 @@ It also covers **revising an existing poster the user sends back** — typo fixe
 
 It also covers **date-grid artifacts** — calendars, year/month series, schedules — where the content is computed dates rather than copy and correctness, not style, is what the deliverable is judged on: see `references/calendar-and-date-grids.md`.
 
+When the user hands you a **reference poster to imitate**, do not eyeball it: `references/reference-extraction.md` gives the deterministic route — sample the palette, measure the layout bands, derive ratios, and emit an annotated overlay so the user can verify the reading. Backed by `scripts/analyze_reference.py` (see `--help`).
+
 ## Procedure
 
 0. **Classify the form before styling anything.** Decide what the deliverable actually *is* — one poster, a graphic set, a date grid, a raster revision — because the form picks the route and the references; style is the *last* decision, not the first. (Borrowed from the "form before styling" discipline in a leading design skill.)
 1. **Resolve the deliverable before building.** When the user sends an image, or an image plus a block of copy, with no explicit ask, it usually maps to several plausible outputs (poster, invitation PNG, deck, or written copy only). Inspect the image with `read`, then use `question` with concrete options, recommended first. Building the wrong artifact burns the whole cycle.
 2. **Harvest the source photo for design vocabulary.** Read the subject's own signage, labels, stickers, packaging words, and decorations with `read`; that material is free, authentic vocabulary that ties the poster to the real event. Echo one or two motifs in the layout (bunting for a market, plant doodles for a gardening activity, the photo's label wording in the body copy).
 3. **Choose the page size** per target channel (table below). When the user names an *occasion* but not a format or palette (「幼儿园家长会」「立冬海报」), run `python scripts/suggest.py "<场景>"` **first** — it maps Chinese occasion words onto a template + palette and prints the matched keywords, so the choice is auditable rather than a guess. It is a rule table, not a model: when it is wrong, fix one row.
+
+   **尺寸没明说时，先提示再动手（4.4.2）。** 用户说「做张海报 / 邀请函 / 分享图 / 宣传图」却没给尺寸，
+   **不要默默选一个**——先用 `python scripts/suggest_size.py` 拿一组带「比例 + 具体像素 + 适用场景」
+   的推荐，再用 `question` 把带推荐项的选项摆给用户（推荐项放第一个）。
+   数据来自 `references/platform-specs.md`（本仓已验证的中文平台规格，并与 Sprout Social /
+   Hootsuite 2026 国际规范交叉核对）。常用默认：
+
+   | 场景 | 比例 | 像素 | 本仓格式 |
+   |---|---|---|---|
+   | **网络传播 / 微信单图转发 / 邀请函（单图）首选** | **3:4** | **1080 × 1440** | `poster-social` |
+   | 朋友圈九宫格（每格必须正方）| 1:1 | 1080 × 1080 | `poster-square` |
+   | 朋友圈方形单图 / 节气问候 | 1:1 | 1080 × 1080 | `poster-square` / `poster-term` |
+   | 小红书封面 | 3:4 | 1242 × 1656（常用 1080 × 1440）| `poster-social` |
+   | 公众号首图（超宽）| 2.35:1 | 900 × 383 | `poster-wide` 改比例 |
+   | 抖音 / 视频号 / Story 竖屏 | 9:16 | 1080 × 1920 | `poster-story` |
+   | A4 打印 / 张贴 | A4 | 2480 × 3508 @300dpi | `poster-a4` |
+
+   > 判据：用户已给出明确尺寸/渠道（「A4」「朋友圈 3:4」「小红书封面」）就直接用，不必再问；
+   > 只给了场景词、没给尺寸时才触发推荐。安全区/投放体积见 `references/platform-specs.md`
+   > 与 `references/delivery-guide.md`。
 4. **Build one HTML file per size.** Absolutely position every element at an exact CSS page size on a same-sized canvas; embed the photo as a base64 data URI so the HTML stays self-contained. Flow layout drifts and cannot be tuned precisely; absolute coordinates put each block exactly where intended.
 5. **Render.** HTML route: `scripts/render_html_to_png.py` (WeasyPrint + PyMuPDF, no browser — run it with the interpreter that has those packages, e.g. `/path/to/venv/bin/python`, and pass `--expect WxH` so a wrong page size fails loudly rather than shipping). Typst route: `typst compile --format png --ppi 300`. Pillow route: direct `save()`.
 6. **Verify the PNG with `read`** (see loop below), fix the HTML, re-render. Do not sign off by re-reading your own HTML or trusting a prior successful run.
@@ -252,7 +274,8 @@ Audit in **both languages**: a sweep for the client's own business terms misses 
 (the leak that got through was a sentence naming an internal path and the existence of private
 material — no brand name, no Chinese term, but a disclosure all the same). A leak in a pushed commit is **not** fixed by a later commit — the old commit stays
 readable by SHA. See `references/publishing-publicly.md` and
-`scripts/audit_public_release.sh`.
+`scripts/audit_public_release.sh`. Platform-specific size/weight/crop limits before you ship —
+and the `--pack` bundle layout — are in `references/delivery-guide.md`.
 
 ## Style direction
 

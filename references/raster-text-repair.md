@@ -2,6 +2,15 @@
 
 For editing words in an existing poster, scan, or photo the user sends back (a typo fix on a delivered graphic). Do not rebuild the design. Change the fewest possible pixels.
 
+> **`--region` 两种格式别混（4.4.2）**：
+> - `verify` 子命令：`--region "名称:x0,y0,x1,y1"`（区域名 + 冒号 + 坐标，可重复）。
+>   缺冒号会友好报错而不是抛 ValueError。
+> - `probe` / `bg` / `erase` / `rules` / `bands` 子命令：`--region x0,y0,x1,y1`（**纯坐标**）。
+> 坐标一律按 **左闭右开** 解释（numpy 惯例）；而 Pillow 的 `rectangle([x0,y0,x1,y1])` 是
+> 右闭，两者最后一列/最后一行会差 1 像素——不是算错，标记区域时留意即可。
+> 改成品上的**错字/日期/流程**用这些确定性工具；**画面级改图**（照片风格化、去水印）
+> 用 `scripts/edit_image.py`（`references/ai-image-models.md`）。
+
 ## Tool: `scripts/repair_text.py`
 
 The six steps below are now a script — no need to reassemble the snippets each time:

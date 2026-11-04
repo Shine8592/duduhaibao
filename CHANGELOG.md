@@ -2,6 +2,46 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [4.4.2] — 2026-11-04
+
+> 主题：未指定尺寸时主动推荐（联网核对的常用规格）+ 全流程审计 7 项 bug 修复
+
+### Added · 尺寸推荐（核心）
+
+用户说「做张海报/邀请函/分享图」却没给尺寸时，不再默默选一个：
+
+- **`scripts/suggest_size.py`（新）**：输出带「比例 + 具体像素 + 适用场景」的推荐，
+  数据单一真源 `references/platform-specs.md`（本仓 9 版式已验证），并与
+  Sprout Social / Hootsuite 2026 国际规范交叉核对（1080 宽为通用基准）。
+  - 网络传播 / 微信单图转发 / 邀请函（单图）首选：**3:4 1080×1440**（`poster-social`）
+  - 朋友圈九宫格：**1:1 1080×1080**（每格必须正方）
+  - 小红书封面：3:4 1242×1656（常用 1080×1440）；公众号首图：2.35:1 900×383
+  - 抖音/视频号 Story：9:16 1080×1920；A4 打印：2480×3508 @300dpi
+- **SKILL.md 步骤 3 硬规则**：只给场景词、没给尺寸 → 先 `suggest_size.py` 拿推荐，
+  再用 `question` 把带推荐项的选项摆给用户（推荐项在前）；已给明确尺寸/渠道则直接用。
+
+### Fixed（全流程审计 7 项）
+
+- **R1（P0）** `example/build.sh` / `build.ps1`：版式名拼错时静默渲染全部 9 个并返回 0
+  → 现校验版式名，未知版式报错 RC=2。
+- **R2（P0）** `repair_raster.py verify --region`：缺区域名前缀抛 ValueError Traceback
+  → 两处路径（带/不带 `--report`）都改为友好提示（`parse_region_spec`）。
+- **R3** `repair_text.py --font`：help 说「字体名」易被当成字体族名 → 明确只接受
+  「字体文件名或绝对路径」，找不到时给三行提示。
+- **R4** `repair_raster.py` / `repair_text.py` / `analyze_reference.py`：空文件/损坏图/
+  不存在路径抛完整 Traceback → 统一为一行友好报错。
+- **R5** `preflight.py`：墨迹率硬编码 245，浅色底版式（节气版）误报 98.5%
+  → 改用 `_corner_bg` 采样的页面底色，9 版式落到合理区间（节气版 ~23%）。
+- **R6** `SKILL.md`：补上 `references/reference-extraction.md`（此前完全孤儿）与
+  `references/delivery-guide.md` 的入口。
+- **R7** `audit_public_release.sh`：缺 `AUDIT_CLIENT_TERMS` 的报错形似脚本故障
+  → 显式用法提示 + RC=2。
+
+### Docs
+
+- `references/raster-text-repair.md`：说明 `rules` 与 `verify` 的 `--region` 格式差异、
+  坐标左闭右开（与 Pillow 右闭差 1 像素）。
+
 ## [4.4.1] — 2026-11-04
 
 > 主题：交付物复验修复 —— 改字边界判定重写（保守策略 + 显式开关）

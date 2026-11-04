@@ -36,7 +36,13 @@ echo "════════ 公开仓库泄漏扫描 ════════
 
 # 客户词表必须由调用方传入 —— 绝不写死在脚本里。
 # 这个脚本是要被公开的，任何真实客户名写进来就是一次泄漏。
-: "${AUDIT_CLIENT_TERMS:?请用 AUDIT_CLIENT_TERMS 环境变量传入客户词表（如 客户A|客户B），不要把真实客户名写进脚本}"
+# v4.4.2（R7）：原来用 ${VAR:?} 语法，报错形似脚本自己坏了；改成显式的用法提示。
+if [ -z "${AUDIT_CLIENT_TERMS:-}" ]; then
+  echo "✗ 缺少 AUDIT_CLIENT_TERMS（客户词表）" >&2
+  echo "  用法：AUDIT_CLIENT_TERMS='客户A|客户B' bash scripts/audit_public_release.sh" >&2
+  echo "  说明：客户名绝不写进脚本本身（本脚本要公开）" >&2
+  exit 2
+fi
 
 # 扫历史提交 —— 只查工作区会漏掉历史里的东西，
 # 而 --force-push 之后旧提交仍能按 SHA 读到。

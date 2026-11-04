@@ -40,7 +40,12 @@ while [ $# -gt 0 ]; do
     --styles)  STYLES_CMP=1 ;;
     --pack)    PACK=1 ;;
     -*)        echo "未知参数：$1"; exit 2 ;;
-    *)         ONLY="$1" ;;
+    *)         case "$1" in
+                 a4|social|square|story|cute|term|photo|wide|banner|all) ONLY="$1" ;;
+                 *) echo "未知版式：$1" >&2
+                    echo "可选：a4 social square story cute term photo wide banner all" >&2
+                    exit 2 ;;
+               esac ;;
   esac
   shift
 done

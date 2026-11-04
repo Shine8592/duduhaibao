@@ -35,6 +35,14 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# v4.4.2（R1）：版式名校验 —— 拼错时不能静默渲染全部 9 个并返回 0
+$ValidFormats = @("a4", "social", "square", "story", "cute", "term", "photo", "wide", "banner", "all")
+if ($Only -notin $ValidFormats) {
+    [Console]::Error.WriteLine("未知版式：$Only")
+    [Console]::Error.WriteLine("可选：$($ValidFormats -join ' ')")
+    exit 2
+}
+
 $Here = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location -LiteralPath $Here
 New-Item -ItemType Directory -Path "out" -Force | Out-Null

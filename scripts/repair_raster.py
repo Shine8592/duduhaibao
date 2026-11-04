@@ -31,7 +31,15 @@ from PIL import Image
 
 
 def load(path):
-    return np.array(Image.open(path).convert('RGB'), dtype=np.float64)
+    """v4.4.2（R4）：坏输入给友好报错，不抛 Traceback。"""
+    try:
+        return np.array(Image.open(path).convert('RGB'), dtype=np.float64)
+    except FileNotFoundError:
+        raise SystemExit('图片不存在：%s' % path)
+    except Image.UnidentifiedImageError:
+        raise SystemExit('无法识别为图片（文件为空/损坏/不是图片）：%s' % path)
+    except OSError as e:
+        raise SystemExit('读取图片失败：%s（%s）' % (path, e))
 
 
 def lum(arr):
@@ -46,6 +54,21 @@ def region(s):
     if len(v) != 4:
         raise argparse.ArgumentTypeError('区域格式 x0,y0,x1,y1')
     return tuple(v)
+
+
+def parse_region_spec(spec):
+    """'name:x0,y0,x1,y1' → (name, 'x0,y0,x1,y1')。
+
+    v4.4.2（R2）：格式不符时给友好提示，而不是抛 ValueError Traceback。
+    注意 rules 子命令的 --region 是纯坐标 x0,y0,x1,y1（type=region），
+    与 verify 的 name:coords 不是同一格式。
+    """
+    if ':' not in spec:
+        raise SystemExit(
+            '--region 格式应为 name:x0,y0,x1,y1（区域名 + 冒号 + 坐标），收到：%s\n'
+            '例：--region "title:100,300,900,420"' % spec
+        )
+    return spec.split(':', 1)
 
 
 def bg_profile(a, y0, y1, sx0, sx1, ink=205, need=20, smooth=11):
@@ -292,7 +315,7 @@ def cmd_verify(args):
     m = np.zeros_like(ch)
     print('尺寸 %dx%d  总像素 %d' % (f.shape[1], f.shape[0], tot))
     for spec in args.region:
-        name, r = spec.split(':', 1)
+        name, r = parse_region_spec(spec)
         x0, y0, x1, y1 = region(r)
         m[y0:y1, x0:x1] = True
         print('  %-16s 改 %7d px' % (name, int(ch[y0:y1, x0:x1].sum())))
@@ -414,7 +437,7 @@ def _write_verify_report(args):
     m = np.zeros_like(ch)
     regions = []
     for spec in args.region:
-        name, r = spec.split(':', 1)
+        name, r = parse_region_spec(spec)
         x0, y0, x1, y1 = region(r)
         m[y0:y1, x0:x1] = True
         regions.append({'name': name, 'box': [x0, y0, x1, y1],

@@ -67,14 +67,18 @@ def _cv2():
 
 
 def resolve_font(spec, index=0):
-    """字体名或路径 → (路径, ttc 面索引)。"""
+    """字体文件名 / 绝对路径 / 内置别名 → (路径, ttc 面索引)。
+
+    注意：这里认的是「字体文件名」（如 NotoSansCJK-Regular.ttc）或绝对路径，
+    不认字体族名（如 "Noto Sans CJK SC"）。R3。
+    """
     if not spec:
         return None, 0
     if spec in FONT_ALIASES:
         for p in FONT_ALIASES[spec]:
             if os.path.exists(p):
                 return p, index
-        print(f"字体「{spec}」在本机没找到；用 --font 传文件路径，或 --list-fonts 看候选")
+        print(f"字体「{spec}」在本机没找到；用 --font 传字体文件名或绝对路径，或 --list-fonts 看候选")
         sys.exit(1)
     if os.path.exists(spec):
         return spec, index
@@ -86,6 +90,8 @@ def resolve_font(spec, index=0):
                 if f.lower() == spec.lower():
                     return os.path.join(root, f), index
     print(f"找不到字体文件：{spec}")
+    print("  提示：--font 要传【字体文件名】或【绝对路径】，不是字体族名（如 'Noto Sans CJK SC'）")
+    print("        查本机候选：--list-fonts")
     sys.exit(1)
 
 
@@ -110,8 +116,16 @@ def list_fonts():
 
 
 def load_rgb(path):
+    """v4.4.2（R4）：坏输入给友好报错，不抛 Traceback。"""
     from PIL import Image
-    return np.array(Image.open(path).convert("RGB"))
+    try:
+        return np.array(Image.open(path).convert("RGB"))
+    except FileNotFoundError:
+        raise SystemExit('图片不存在：%s' % path)
+    except Image.UnidentifiedImageError:
+        raise SystemExit('无法识别为图片（文件为空/损坏/不是图片）：%s' % path)
+    except OSError as e:
+        raise SystemExit('读取图片失败：%s（%s）' % (path, e))
 
 
 def ink_maps(sub, np):
@@ -214,7 +228,7 @@ def main():
     ap.add_argument("--box", help="目标字框 x0,y0,x1,y1（像素）")
     ap.add_argument("--find-in", help="在该区域（x0,y0,x1,y1）用投影列出候选字形框")
     ap.add_argument("--replace", help="替换成的字符")
-    ap.add_argument("--font", help="字体名或字体文件路径")
+    ap.add_argument("--font", help="字体文件名（如 NotoSansCJK-Regular.ttc）或绝对路径；不是字体族名。查候选用 --list-fonts")
     ap.add_argument("--font-index", type=int, default=0, help=".ttc 面索引（默认 0）")
     ap.add_argument("--sample-box", help="取样墨色的干净字框（默认用目标框自身暗像素）")
     ap.add_argument("--sample-char", help="配合 --font-rank：干净字框里那个字是什么")

@@ -103,7 +103,17 @@ def main():
         print("需要 Pillow：pip install pillow")
         return 1
 
-    im = Image.open(a.image).convert("RGB")
+    try:
+        im = Image.open(a.image).convert("RGB")
+    except FileNotFoundError:
+        print('图片不存在：%s' % a.image, file=sys.stderr)
+        return 1
+    except Image.UnidentifiedImageError:
+        print('无法识别为图片（文件为空/损坏/不是图片）：%s' % a.image, file=sys.stderr)
+        return 1
+    except OSError as e:
+        print('读取图片失败：%s（%s）' % (a.image, e), file=sys.stderr)
+        return 1
     W0, H0 = im.size
     k = min(1.0, a.maxedge / max(W0, H0))
     if k < 1:

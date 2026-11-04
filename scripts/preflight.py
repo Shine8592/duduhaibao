@@ -335,19 +335,25 @@ def _strip_dirty(im, region, bg, tol=8):
     return dirty, total
 
 
-def _ink_and_dirty(im, region=None):
+def _ink_and_dirty(im, region=None, bg=None):
     """统计墨迹占比与"脏像素"数。
 
-    用 tobytes() 而不是 getdata()：后者在 Pillow 13+ 已弃用
-    （2027-10 移除），而 tobytes() 各版本都在，也不依赖 numpy。
+    v4.4.2（R5）：bg = 页面底色（不传则按底部两角采样）。**绝不能写死 245**：
+    节气版等整页浅色底的版式（如 RGB 240,248,248），R 通道 < 245 会把整片背景
+    算成墨迹，误报 98.5%。复用 _corner_bg 的同一套定义。
+    用 tobytes() 而不是 getdata()：后者在 Pillow 13+ 已弃用。
     """
     if region is not None:
         im = im.crop(region)
+    im = im.convert('RGB')
+    if bg is None:
+        bg = _corner_bg(im)
     data = im.tobytes()
     total = len(data) // 3
     dirty = 0
     for i in range(0, len(data), 3):
-        if data[i] < 245 or data[i + 1] < 245 or data[i + 2] < 245:
+        if (abs(data[i] - bg[0]) + abs(data[i + 1] - bg[1])
+                + abs(data[i + 2] - bg[2])) > 24:
             dirty += 1
     return dirty, total
 
@@ -383,8 +389,9 @@ def check_output():
             im = im.convert("RGB")
 
         # ① 不是空白图（缩到 200px 宽再统计，够快又够准）
+        bg = _corner_bg(im)                                   # v4.4.2 R5：底色取自大图
         small = im.resize((200, max(1, int(200 * h / w))), Image.LANCZOS)
-        dirty, total = _ink_and_dirty(small)
+        dirty, total = _ink_and_dirty(small, bg=bg)          # 传入底色，不写死 245
         ink = dirty / total
         if ink < 0.005:
             err(f"{desc}：几乎空白（墨迹 {ink*100:.2f}%），渲染可能失败")
