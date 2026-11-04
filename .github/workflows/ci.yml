@@ -49,7 +49,28 @@ jobs:
       # 必须在渲染之前查，否则报错信息是 typst 的 Invalid PNG signature，
       # 很难联想到是资产文件被文本化过。
       - name: 图片资产完整性检查
-        run: python3 scripts/check_images.py
+        run: |
+          python3 scripts/check_images.py
+          # v4.4.3 防回归：合法 JPG 里偶发 EF BF BD 字节不得误报；真损坏仍须拦下
+          python3 - <<'PY'
+          import sys, tempfile
+          from pathlib import Path
+          sys.path.insert(0, "scripts")
+          import check_images as C
+          t = Path(tempfile.mkdtemp())
+          # 合法：JPEG 头 + 数据中间 1 个孤立 U+FFFD，且能解码
+          from PIL import Image
+          import io
+          im = Image.new("RGB", (16, 16), (120, 130, 140))
+          b = io.BytesIO(); im.save(b, "JPEG"); raw = bytearray(b.getvalue())
+          raw[50:50] = b"\xef\xbf\xbd"
+          legal = t / "legal.jpg"; legal.write_bytes(bytes(raw))
+          assert C.check_one(legal) == [], f"合法 JPG 被误报: {C.check_one(legal)}"
+          # 真损坏：头即 EF BF BD
+          bad = t / "bad.jpg"; bad.write_bytes(b"\xef\xbf\xbd" + b"\x00" * 100)
+          assert C.check_one(bad), "真损坏未被拦下"
+          print("✅ check_images 合法/损坏双向判定正常")
+          PY
 
       # ── 4.4.0：AI 生图/改图脚本冒烟（不需要 API key，只验证 import + CLI 能起）──
       # 这些是新增能力；不进 CI 的话，改坏了要等用户真调模型才发现。

@@ -42,22 +42,36 @@ def check_one(p: Path) -> list:
     except Exception as e:
         return [f"读取失败: {e}"]
 
-    n = data.count(REPLACEMENT)
-    if n:
-        problems.append(f"含 {n} 个 U+FFFD 替换字符（文本往返损坏）")
-
-    # 用 Pillow 实际解码（能发现文件头正常但内容坏的情况）
+    # 用 Pillow 实际解码一次（能发现文件头正常但内容坏的情况）
+    decodes = None  # None=无 Pillow / True=可解码 / False=解码失败
     try:
         from PIL import Image
         with Image.open(p) as im:
             im.verify()
+        decodes = True
     except ImportError:
         pass  # 没装 Pillow 就只做字节检查
     except Exception as e:
+        decodes = False
         problems.append(f"解码失败: {type(e).__name__}: {str(e)[:80]}")
 
+    # v4.4.3（交付物复验修复）：不能「出现任意 U+FFFD 字节就定罪」。
+    # JPEG/PNG 是二进制压缩数据，像素里恰好出现 EF BF BD 三字节是合法且常见的
+    # （实测一张正常导出的 poster-story.jpg 在压缩数据中间有 1 个，Pillow 能完整解码）。
+    # 真正的「文本往返损坏」特征是：文件头即 EF BF BD，或替换字符成千上万成片出现。
+    # 判据 = 头损坏 / 解码失败 / 「成片替换字符」——成片用绝对数 + 密度双门槛，
+    # 避免小文件里 1 个孤立字节因密度虚高被误判（16x16 JPEG 插 1 个 = 0.16%）。
+    # 真「文本往返损坏」是成千上万个（外部审计报告 5 万+），个位数是二进制巧合。
+    n = data.count(REPLACEMENT)
+    density = n / max(len(data), 1)
+    head_corrupt = data[:2] == b"\xef\xbf" or data[:3] == REPLACEMENT[:3]
+    mass_pollution = n >= 20 and density > 0.001
+    if n and (head_corrupt or mass_pollution or decodes is False):
+        problems.append(f"含 {n} 个 U+FFFD 替换字符（{density*100:.2f}%，"
+                        f"文本往返损坏或疑似损坏）")
+
     # 文件头快检（不解码也能发现的）
-    if data[:3] == REPLACEMENT[:3] or data[:2] == b"\xef\xbf":
+    if head_corrupt:
         problems.append("文件头已被替换字符污染")
     elif data[:8] == b"\x89PNG\r\n\x1a\n":
         pass
